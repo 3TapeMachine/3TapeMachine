@@ -1,4 +1,4 @@
-# [turingmachine.io](http://turingmachine.io)
+# [3 Tape Turing Machine]
 
 This is a [Turing machine] visualizer designed for learning through visual thinking and creative exploration.
 
@@ -12,14 +12,8 @@ To encourage experimentation, the document system provides for quick snapshots a
 All in all, this is the simulator I wish I had when taking automata theory.
 At the same time, I’ve tried to make it accessible to people who aren’t in computer science, or haven’t heard of a Turing machine before.
 
-Feel free to email me if you have any questions, comments, or feedback in general about the project.
-Bug reports and feature requests are also welcome on the [issue tracker].
-Some known issues and ideas for improvement are outlined on the [wiki].
 
 [Turing machine]: http://plato.stanford.edu/entries/turing-machine
-
-[issue tracker]:  https://github.com/aepsilon/turing-machine-viz/issues
-[wiki]:           https://github.com/aepsilon/turing-machine-viz/wiki
 
 
 ## Development Setup
@@ -28,12 +22,8 @@ If you want to work on the site itself, here’s how to get started:
 
 Clone the repo and run `npm install` in the folder. Afterwards, use `npm start` to host the site locally on a [webpack server], by default at localhost:8080.
 
-`npm run depgraph` or `depgraph-noext` (requires [madge] and [Graphviz]) produces
-a visual dependency graph that’s good for getting a feel for the code layout.
 
 [webpack server]: https://webpack.github.io/docs/webpack-dev-server.html
-[madge]: https://github.com/pahen/madge
-[Graphviz]: http://www.graphviz.org/
 
 
 ## Dependencies
@@ -59,3 +49,9 @@ Thanks go to the authors of the following runtime dependencies:
 [lodash]: https://github.com/lodash/lodash
 [lodash/fp]: https://github.com/lodash/lodash/wiki/FP-Guide
 [lumen]: https://bootswatch.com/lumen/
+
+## Original Source
+
+Special Thanks to Andy Li who created the original [visualizer] this project was based on.
+
+[visualizer]: https://turingmachine.io

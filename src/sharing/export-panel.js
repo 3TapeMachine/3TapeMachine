@@ -64,7 +64,7 @@ function generateGist(container, button, filename, contents) {
 
   var payload = {
     files: {},
-    description: 'Turing machine for http://turingmachine.io',
+    description: '3 machine turing machine visualizer',
     public: true
   };
   payload.files[filename] = {content: contents};
@@ -72,7 +72,7 @@ function generateGist(container, button, filename, contents) {
   return createGist(payload).then(function (response) {
     // Show link on success
     var id = response.id;
-    showGeneratedGist(container, 'http://turingmachine.io/?import-gist=' + id);
+    showGeneratedGist(container, 'http://localhost:8080/?import-gist=' + id);
   }).catch(function (reason) {
     // Alert error on failure
     var message = (function () {
