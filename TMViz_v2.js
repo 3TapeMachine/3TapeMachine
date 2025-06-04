@@ -277,11 +277,6 @@ TMViz.prototype.render = function() {
   });
 };
 
-/**
- * Optionally, if TMViz had an animation loop / .run() that auto-steps
- * every N ms, you’d update it here to call step() as long as isRunning && !isHalted.
- * That logic does not need tape-specific change beyond calling the new step().
- */
 
 // Export the class
 module.exports = TMViz;
