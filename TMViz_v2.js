@@ -4,7 +4,7 @@ var TM       = require('./TuringMachine'),
     d3       = require('d3-selection'),
     jsyaml   = require('js-yaml'),
     _        = require('lodash');
-
+    
 /**
  * TMViz: Visualization + simulation of a Turing Machine.
  * Updated for three-tape support: 
