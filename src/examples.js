@@ -1,7 +1,7 @@
 'use strict';
 
 var parseDocument = require('./sharing/format').parseDocument;
-var fromPairs = require('lodash/fp').fromPairs;
+var fromPairs = require('lodash/fp').fromPairs;   
 
 
 function requireExample(name) {
