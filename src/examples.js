@@ -1,13 +1,14 @@
 'use strict';
 
-var parseDocument = require('./sharing/format').parseDocument;
-var fromPairs = require('lodash/fp').fromPairs;   
+let parseDocument = require('./sharing/format').parseDocument;
+let fromPairs = require('lodash/fp').fromPairs;   
 
 
-function requireExample(name) {
-  return require('raw!./examples/' + name + '.yaml');
+function requireExample(exName) {
+  return require('raw!./examples-3tape/' + exName + '.yaml');
 }
 
+/*
 var examplePairs = [
   'repeat01',
   'binaryIncrement',
@@ -31,8 +32,19 @@ var examplePairs = [
 
   return [id, doc];
 });
-var examples = Object.freeze(fromPairs(examplePairs));
+*/
 
+let examplePairs = [
+  'adder'
+].map(function (id) {
+  // parse each string into a document
+  let doc = parseDocument(requireExample(id));
+  doc.id = id;
+
+  return [id, doc];
+});
+
+let examples = Object.freeze(fromPairs(examplePairs));
 
 function isExampleID(docID) {
   return {}.hasOwnProperty.call(examples, docID);
@@ -42,11 +54,11 @@ function get(docID) {
   return isExampleID(docID) ? examples[docID] : null;
 }
 
-var list = examplePairs.map(function (pair) { return pair[1]; });
+let list = examplePairs.map(function (pair) { return pair[1]; });
 
 
 exports.hasID = isExampleID;
 exports.get = get;
 exports.list = list;
-exports.firsttimeDocID = 'binaryIncrement';
+exports.firsttimeDocID = 'adder';
 exports.blankTemplate = requireExample('_template');

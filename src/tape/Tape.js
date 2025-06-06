@@ -1,5 +1,5 @@
 'use strict';
-var _ = require('lodash/fp');
+let _ = require('lodash/fp');
 
 // Bidirectional infinite tape
 function Tape(blank, input) {
@@ -30,22 +30,24 @@ Tape.prototype.write = function (symbol) {
 };
 
 Tape.prototype.headRight = function () {
-  var before = this.tape.before,
-      after = this.tape.after;
+  let before = this.tape.before,
+    after = this.tape.after;
   before.push(after.pop());
   if (_.isEmpty(after)) {
     after.push(this.blank);
   }
 };
 Tape.prototype.headLeft = function () {
-  var before = this.tape.before,
-      after = this.tape.after;
+  let before = this.tape.before,
+    after = this.tape.after;
   if (_.isEmpty(before)) {
     before.push(this.blank);
   }
   after.push(before.pop());
 };
-
+Tape.prototype.headStay = function () {
+  // do nothing
+};
 Tape.prototype.toString = function () {
   return this.tape.toString();
 };
@@ -54,7 +56,7 @@ Tape.prototype.toString = function () {
 // Read the value at an offset from the tape head.
 // 0 is the tape head. + is to the right, - to the left.
 Tape.prototype.readOffset = function (i) {
-  var tape = this.tape;
+  let tape = this.tape;
   if (i >= 0) {
     // right side: offset [0..length-1] ↦ array index [length-1..0]
     return (i <= tape.after.length - 1) ? tape.after[tape.after.length - 1 - i] : this.blank;
