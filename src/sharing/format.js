@@ -1,26 +1,22 @@
-'use strict';
-
-var jsyaml = require('js-yaml'),
-    _ = require('lodash/fp');
+import jsyaml from 'js-yaml';
 
 // Document Serialization
 
-var docToYaml = {
+const docToYaml = {
   name: 'name',
   sourceCode: 'source code',
   positionTable: 'positions',
   editorSourceCode: 'editor contents'
 };
-var yamlToDoc = _.invert(docToYaml);
+const yamlToDoc = Object.fromEntries(Object.entries(docToYaml).map(([k, v]) => [v, k]));
 
 // like _.mapKeys, but only using the keys specified in a mapping object.
-// {[key: string] -> string} -> ?Object -> Object
 function mapKeys(mapping) {
   return function (input) {
-    var output = {};
+    const output = {};
     if (input != null) {
-      Object.keys(mapping).forEach(function (fromKey) {
-        var toKey = mapping[fromKey];
+      Object.keys(mapping).forEach(fromKey => {
+        const toKey = mapping[fromKey];
         output[toKey] = input[fromKey];
       });
     }
@@ -28,7 +24,31 @@ function mapKeys(mapping) {
   };
 }
 
-// we want parseDocument . stringifyDocument = identity, up to null == undefined.
+// Omit keys with null or undefined values
+function omitByNull(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v != null)
+  );
+}
+
+// Like lodash's mapValues
+function mapValues(obj, fn) {
+  if (!obj) return obj;
+  return Object.fromEntries(
+    Object.entries(obj).map(([k, v]) => [k, fn(v, k)])
+  );
+}
+
+// Like lodash's update
+function update(obj, key, fn) {
+  if (!obj || !(key in obj)) return obj;
+  return { ...obj, [key]: fn(obj[key]) };
+}
+
+// Like lodash's defaults (but 2nd arg takes precedence)
+function defaults(defaultsObj, obj) {
+  return { ...defaultsObj, ...obj };
+}
 
 /**
  * Serialize a document.
@@ -37,22 +57,23 @@ function mapKeys(mapping) {
  * @param  {TMDocument} doc document to serialize
  * @return {string}
  */
-var stringifyDocument = _.flow(
-  mapKeys(docToYaml),
-  _.omitBy(function (x) { return x == null; }),
-  _.update('positions', _.mapValues(function (pos) {
-    return pos.fixed
-      ? {x: pos.x, y: pos.y}
-      : {x: pos.x, y: pos.y, fixed: false};
-  })),
-  // NB. lodash/fp/partialRight takes an array of arguments.
-  _.partialRight(jsyaml.safeDump, [{
+export function stringifyDocument(doc) {
+  let out = mapKeys(docToYaml)(doc);
+  out = omitByNull(out);
+  out = update(out, 'positions', positions =>
+    mapValues(positions, pos =>
+      pos.fixed
+        ? { x: pos.x, y: pos.y }
+        : { x: pos.x, y: pos.y, fixed: false }
+    )
+  );
+  return jsyaml.safeDump(out, {
     flowLevel: 2,       // positions: one state per line
     lineWidth: -1,      // don't wrap lines
     noRefs: true,       // no aliases/references are used
     noCompatMode: true  // use y: instead of 'y':
-  }])
-);
+  });
+}
 
 /**
  * Deserialize a document.
@@ -63,38 +84,34 @@ var stringifyDocument = _.flow(
  * @throws {YAMLException} on YAML syntax error
  * @throws {TypeError}     when missing "source code" string property
  */
-var parseDocument = _.flow(
-  jsyaml.safeLoad,
-  _.update('positions', _.mapValues(function (pos) {
-    // NB. lodash/fp/defaults is swapped: 2nd takes precedence
-    return _.defaults({px: pos.x, py: pos.y, fixed: true}, pos);
-  })),
-  mapKeys(yamlToDoc),
-  checkData
-);
+export function parseDocument(str) {
+  let obj = jsyaml.load(str);
+  obj = update(obj, 'positions', positions =>
+    mapValues(positions, pos =>
+      defaults({ px: pos.x, py: pos.y, fixed: true }, pos)
+    )
+  );
+  obj = mapKeys(yamlToDoc)(obj);
+  return checkData(obj);
+}
 
 // throw if "source code" attribute is missing or not a string
 function checkData(obj) {
   if (obj == null || obj.sourceCode == null) {
     throw new InvalidDocumentError('The “source code:” value is missing');
-  } else if (!_.isString(obj.sourceCode)) {
+  } else if (typeof obj.sourceCode !== 'string') {
     throw new InvalidDocumentError('The “source code:” value needs to be of type string');
   }
   return obj;
 }
 
 // for valid YAML that is not valid as a document
-function InvalidDocumentError(message) {
-  this.name = 'InvalidDocumentError';
-  this.message = message || 'Invalid document';
-  this.stack = (new Error()).stack;
+export class InvalidDocumentError extends Error {
+  constructor(message = 'Invalid document') {
+    super(message);
+    this.name = 'InvalidDocumentError';
+  }
 }
-InvalidDocumentError.prototype = Object.create(Error.prototype);
-InvalidDocumentError.prototype.constructor = InvalidDocumentError;
-
-exports.stringifyDocument = stringifyDocument;
-exports.parseDocument = parseDocument;
-exports.InvalidDocumentError = InvalidDocumentError;
 
 // Re-exports
-exports.YAMLException = jsyaml.YAMLException;
+export const YAMLException = jsyaml.YAMLException;

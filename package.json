@@ -4,25 +4,49 @@
   "description": "Turing machine visualization and simulator with three tapes.",
   "homepage": "https://github.com/3TapeMachine/3TapeMachine",
   "license": "BSD-3-Clause",
-  "contributors": [{"name": "Andy Li",           "email": "andy.srs.li@gmail.com"}, 
-                   {"name": "Samyek Ofori-Addo", "email": "oforiadds@jacks.sfasu.edu"},
-                   {"name": "Billy Harris",      "email": "billy.harris@sfasu.edu"}],
+  "contributors": [
+    {
+      "name": "Andy Li",
+      "email": "andy.srs.li@gmail.com"
+    },
+    {
+      "name": "Samyek Ofori-Addo",
+      "email": "oforiadds@jacks.sfasu.edu"
+    },
+    {
+      "name": "Billy Harris",
+      "email": "billy.harris@sfasu.edu"
+    }
+  ],
   "repository": "github:3TapeMachine/3TapeMachine",
+  "type": "module",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "scripts": {
     "clean": "trash build/ || rm -r build/",
     "depgraph": "mkdir -p build/ && (cd src/ && madge . --dot) > build/depgraph.gv",
     "depgraph-noext": "mkdir -p build/ && (cd src/ && madge . --dot -x \"`node -e \"console.log(Object.keys(require('../webpack.config').externals).map(s => '^'+s+'$').join('|'))\"`\") > build/depgraph-noext.gv",
     "lint": "eslint --cache webpack.config.js src/",
-    "prod": "export NODE_ENV=production; npm run lint && webpack --progress --colors --display-error-details",
-    "start": "webpack-dev-server --progress --colors --display-error-details --host=0.0.0.0",
-    "watch": "webpack --watch --progress --colors --display-error-details"
+    "prod": "export NODE_ENV=production; npm run lint && webpack --progress",
+    "start": "webpack-dev-server --progress --stats-error-details --host=0.0.0.0",
+    "watch": "webpack --watch --progresss"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ace-builds": "^1.42.0",
+    "css-loader": "^7.1.2",
+    "d3": "^7.9.0",
+    "eslint": "^9.28.0",
+    "jquery": "^3.7.1",
+    "js-yaml": "^4.1.0",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.99.9",
+    "webpack-dev-server": "^5.2.2"
+  },
   "devDependencies": {
-    "eslint": "^3.0.0",
-    "file-loader": "^0.8.5",
-    "raw-loader": "^0.5.1",
-    "webpack": "^1.12.9",
-    "webpack-dev-server": "^1.16.5"
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.28.0",
+    "globals": "^16.2.0",
+    "webpack-cli": "^6.0.1"
   }
 }

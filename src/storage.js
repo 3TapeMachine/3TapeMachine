@@ -1,68 +1,52 @@
-'use strict';
-
-var isBrowserIEorEdge = require('./util').isBrowserIEorEdge;
-/* global localStorage:false, window:false */
 
 ///////////////////////
 // Key-Value Storage //
 ///////////////////////
 
-var canUseLocalStorage = (function () {
+export const canUseLocalStorage = (() => {
   // from modernizr v3.3.1 (modernizr.com)
-  var mod = 'modernizr';
+  const mod = 'modernizr';
   try {
     localStorage.setItem(mod, mod);
     localStorage.removeItem(mod);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 })();
 
 // RAM-only fallback
-var RAMStorage = (function () {
-  var obj = {};
+const RAMStorage = (() => {
+  let obj = {};
   return Object.freeze({
     get length() { return Object.keys(obj).length; },
-    key: function (n) { return (n in Object.keys(obj)) ? Object.keys(obj)[n] : null; },
-    getItem: function (key) { return {}.hasOwnProperty.call(obj, key) ? obj[key] : null; },
-    setItem: function (key, val) { obj[key] = String(val); },
-    removeItem: function (key) { delete obj[key]; },
-    clear: function () { obj = {}; }
+    key(n) { return Object.keys(obj)[n] ?? null; },
+    getItem(key) { return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : null; },
+    setItem(key, val) { obj[key] = String(val); },
+    removeItem(key) { delete obj[key]; },
+    clear() { obj = {}; }
   });
 })();
 
-var KeyValueStorage = (function () {
-  var s = canUseLocalStorage ? localStorage : RAMStorage;
-
-  // workaround IE/Edge firing events on its own window
-  var fromOwnWindow = isBrowserIEorEdge
-    ? function () { return window.document.hasFocus(); }
-    : function () { return false; };
+export const KeyValueStorage = (() => {
+  const s = canUseLocalStorage ? localStorage : RAMStorage;
 
   return {
-    read  : s.getItem.bind(s),
-    write : s.setItem.bind(s),
+    read: s.getItem.bind(s),
+    write: s.setItem.bind(s),
     remove: s.removeItem.bind(s),
     // Registers a listener for StorageEvents from other tabs/windows.
     addStorageListener: canUseLocalStorage
-      ? function (listener) {
-        window.addEventListener('storage', function (e) {
-          if (fromOwnWindow()) {
-            return;
-          }
+      ? (listener) => {
+        window.addEventListener('storage', (e) => {
           if (e.storageArea === localStorage) {
             listener(e);
           }
         });
       }
-      : function () {},
+      : () => {},
     removeStorageListener: canUseLocalStorage
       ? window.removeEventListener.bind(window, 'storage')
-      : function () {}
+      : () => {}
   };
 })();
-
-
-exports.canUseLocalStorage = canUseLocalStorage;
-exports.KeyValueStorage = KeyValueStorage;

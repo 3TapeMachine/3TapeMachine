@@ -1,49 +1,48 @@
-'use strict';
-
-/* eslint-env browser */
-var format = require('./format');
-var createGist = require('./gist').createGist;
-var Clipboard = require('clipboard');
-var $ = require('jquery'); // for bootstrap tooltip
+import * as format from './format.js';
+import { createGist } from './gist.js';
 
 // https://github.com/Modernizr/Modernizr/blob/master/feature-detects/a/download.js
-var canUseDownloadAttribute =
-  !window.externalHost && 'download' in document.createElement('a');
+const canUseDownloadAttribute = 'download' in document.createElement('a');
 
 // can copy to clipboard programmatically?
-var canUseCopyCommand = (function () {
-  try {
-    return document.queryCommandSupported('copy');
-  } catch (e) {
-    return false;
-  }
-}());
+const canUseClipboardAPI = !!(navigator.clipboard && navigator.clipboard.writeText);
+
 
 // Add event handlers to select an HTMLInputElement's text on focus.
 function addSelectOnFocus(element) {
-  element.addEventListener('focus', function selectAll(e) {
-    e.target.select();
-  });
+  element.addEventListener('focus', e => e.target.select());
   // Safari workaround
-  element.addEventListener('mouseup', function (e) {
-    e.preventDefault();
-  });
+  element.addEventListener('mouseup', e => e.preventDefault());
 }
 
-// Show a one-time tooltip.
-// NB. an existing title attribute overrides the tooltip options.
-function showTransientTooltip($element, options) {
-  $element.tooltip(options)
-    .tooltip('show')
-    .one('hidden.bs.tooltip', function () {
-      $element.tooltip('destroy');
-    });
+// Show a one-time tooltip using a custom span
+function showTransientTooltip(element, message) {
+  const tooltip = document.createElement('span');
+  tooltip.className = 'custom-tooltip';
+  tooltip.textContent = message;
+  tooltip.style.position = 'absolute';
+  tooltip.style.background = '#333';
+  tooltip.style.color = '#fff';
+  tooltip.style.padding = '2px 8px';
+  tooltip.style.borderRadius = '4px';
+  tooltip.style.fontSize = '0.9em';
+  tooltip.style.zIndex = 1000;
+
+  // Position below the element
+  const rect = element.getBoundingClientRect();
+  tooltip.style.left = `${rect.left + window.scrollX}px`;
+  tooltip.style.top = `${rect.bottom + window.scrollY + 4}px`;
+
+  document.body.appendChild(tooltip);
+
+  setTimeout(() => {
+    tooltip.remove();
+  }, 1200);
 }
 
 function showCopiedTooltip(element) {
-  showTransientTooltip($(element), {title: 'Copied!', placement: 'bottom'});
+  showTransientTooltip(element, 'Copied!');
 }
-
 
 ///////////////////////
 // Share with GitHub //
@@ -58,36 +57,34 @@ function showCopiedTooltip(element) {
  * @return {Promise}          Cancellable promise to create the gist.
  */
 function generateGist(container, button, filename, contents) {
-  var oldButtonText = button.textContent;
+  const oldButtonText = button.textContent;
   button.textContent = 'Loading…';
   button.disabled = true;
 
-  var payload = {
-    files: {},
+  const payload = {
+    files: { [filename]: { content: contents } },
     description: '3 machine turing machine visualizer',
     public: true
   };
-  payload.files[filename] = {content: contents};
 
-  return createGist(payload).then(function (response) {
+  return createGist(payload).then(response => {
     // Show link on success
-    var id = response.id;
-    showGeneratedGist(container, 'http://localhost:8080/?import-gist=' + id);
-  }).catch(function (reason) {
+    const id = response.id;
+    showGeneratedGist(container, `http://localhost:8080/?import-gist=${id}`);
+  }).catch(reason => {
     // Alert error on failure
-    var message = (function () {
-      var xhr = reason.xhr;
-      try {
-        return 'Response from GitHub: “' + xhr.responseJSON.message + '”';
-      } catch (e) {
-        if (xhr.status > 0) {
-          return 'HTTP status code: ' + xhr.status + ' ' + xhr.statusText;
-        } else {
-          return 'GitHub could not be reached.\nYour Internet connection may be offline.';
-        }
+    const xhr = reason.xhr;
+    let message;
+    try {
+      message = `Response from GitHub: “${xhr.responseJSON.message}”`;
+    } catch {
+      if (xhr && xhr.status > 0) {
+        message = `HTTP status code: ${xhr.status} ${xhr.statusText}`;
+      } else {
+        message = 'GitHub could not be reached.\nYour Internet connection may be offline.';
       }
-    }());
-    alert('Could not create new gist.\n\n' + message);
+    }
+    alert(`Could not create new gist.\n\n${message}`);
 
     button.disabled = false;
     button.textContent = oldButtonText;
@@ -96,27 +93,37 @@ function generateGist(container, button, filename, contents) {
 
 function showGeneratedGist(container, url) {
   container.innerHTML =
-    '<input id="sharedPermalink" type="url" class="form-control" readonly>' +
-    '<button type="button" class="btn btn-default" data-clipboard-target="#sharedPermalink">' +
-    '<span class="glyphicon glyphicon-copy" aria-hidden="true"></span>' +
-    '</button>';
-  var urlInput = container.querySelector('input');
+    `<input id="sharedPermalink" type="url" class="form-control" readonly>
+     <button type="button" class="btn btn-default" id="copyPermalinkBtn">
+       <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>
+     </button>`;
+  const urlInput = container.querySelector('input');
   urlInput.value = url;
   urlInput.size = url.length + 2;
   addSelectOnFocus(urlInput);
   urlInput.focus();
+
+  // Copy to clipboard using Clipboard API
+  const copyBtn = container.querySelector('#copyPermalinkBtn');
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(urlInput.value);
+      showCopiedTooltip(copyBtn);
+    } catch {
+      alert('Copy failed. Please copy manually.');
+    }
+  });
 }
 
 function createGenerateGistButton(container) {
   container.innerHTML =
-  '<button type="button" class="btn btn-default">Create permalink</button>' +
-  '<p class="help-block">This will create and link to a new' +
-    ' <a href="https://help.github.com/articles/creating-gists/#creating-an-anonymous-gist"' +
-    ' target="_blank">read-only</a> GitHub gist.' +
-  '</p>';
+    `<button type="button" class="btn btn-default">Create permalink</button>
+     <p class="help-block">This will create and link to a new
+       <a href="https://help.github.com/articles/creating-gists/#creating-an-anonymous-gist"
+          target="_blank">read-only</a> GitHub gist.
+     </p>`;
   return container.querySelector('button');
 }
-
 
 ///////////////////
 // Download file //
@@ -124,7 +131,7 @@ function createGenerateGistButton(container) {
 
 // Create a link button if canUseDownloadAttribute, otherwise a link with instructions.
 function createDownloadLink(filename, contents) {
-  var link = document.createElement('a');
+  const link = document.createElement('a');
   link.href = 'data:text/x-yaml;charset=utf-8,' + encodeURIComponent(contents);
   link.target = '_blank';
   link.download = filename;
@@ -135,53 +142,56 @@ function createDownloadLink(filename, contents) {
     return link;
   } else {
     link.textContent = 'Right-click here and choose “Save target as…” or “Download Linked File As…”';
-    var p = document.createElement('p');
+    const p = document.createElement('p');
     p.innerHTML = ', <br>then name the file to end with <code>.yaml</code>';
     p.insertBefore(link, p.firstChild);
     return p;
   }
 }
 
-
 ////////////
 // Common //
 ////////////
 
-function init(args) {
-  var $dialog = args.$dialog,
-      getCurrentDocument = args.getCurrentDocument,
-      getIsSynced = args.getIsSynced,
-      gistContainer = args.gistContainer,
-      downloadContainer = args.downloadContainer,
-      textarea = args.textarea;
+export function init(args) {
+  const {
+    dialog, // HTMLElement (was $dialog)
+    getCurrentDocument,
+    getIsSynced,
+    gistContainer,
+    downloadContainer,
+    textarea
+  } = args;
 
   if (canUseDownloadAttribute) {
-    $dialog.addClass('download-attr');
+    dialog.classList.add('download-attr');
   }
-  if (!canUseCopyCommand) {
-    $dialog.addClass('no-copycommand');
+  if (!canUseClipboardAPI) {
+    dialog.classList.add('no-copycommand');
   }
   gistContainer.className = 'form-group form-inline';
   addSelectOnFocus(textarea);
 
   function setupDialog() {
-    var doc = getCurrentDocument();
-    var filename = doc.name + '.yaml';
-    var contents = format.stringifyDocument(doc);
-    var gistPromise;
+    const doc = getCurrentDocument();
+    const filename = doc.name + '.yaml';
+    const contents = format.stringifyDocument(doc);
+    let gistPromise;
 
     // warn about unsynced changes
-    var $alert;
+    let alertDiv;
     if (!getIsSynced()) {
-      $alert = $(
-        '<div class="alert alert-warning" role="alert">' +
+      alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-warning';
+      alertDiv.setAttribute('role', 'alert');
+      alertDiv.innerHTML =
         'The code editor has <strong>unsynced changes</strong> and might not correspond with the diagram.<br>' +
-        'Click <q>Load machine</q> to try to sync them. Otherwise, two sets of code will be exported.' +
-        '</div>'
-      ).prependTo($dialog.find('.modal-body'));
+        'Click <q>Load machine</q> to try to sync them. Otherwise, two sets of code will be exported.';
+      const modalBody = dialog.querySelector('.modal-body');
+      if (modalBody) modalBody.prepend(alertDiv);
     }
 
-    createGenerateGistButton(gistContainer).addEventListener('click', function (e) {
+    createGenerateGistButton(gistContainer).addEventListener('click', e => {
       gistPromise = generateGist(gistContainer, e.target, filename, contents);
     });
 
@@ -190,34 +200,27 @@ function init(args) {
     // <textarea> for document contents
     textarea.value = contents;
 
-    var clipboard = new Clipboard('[data-clipboard-target]');
-    clipboard.on('success', function (e) {
-      showCopiedTooltip(e.trigger);
-      e.clearSelection();
-    });
-
     // return cleanup function
-    return function () {
-      if (gistPromise) {
-        try { gistPromise.cancel(); } catch (e) {/* */}
+    return function cleanup() {
+      if (gistPromise && typeof gistPromise.cancel === 'function') {
+        try { gistPromise.cancel(); } catch  {/* */}
       }
-      if ($alert) { $alert.remove(); }
+      if (alertDiv) { alertDiv.remove(); }
       gistContainer.textContent = '';
       downloadContainer.textContent = '';
       textarea.value = '';
-      clipboard.destroy();
     };
   }
 
-  $dialog.on('show.bs.modal', function () {
-    var cleanup = setupDialog();
-    $dialog.one('hidden.bs.modal', cleanup);
+  // Modal show/hide events (Bootstrap 4+ uses native events, not jQuery)
+  dialog.addEventListener('show.bs.modal', () => {
+    const cleanup = setupDialog();
+    dialog.addEventListener('hidden.bs.modal', cleanup, { once: true });
   });
-  $dialog.on('shown.bs.modal', function () {
+
+  dialog.addEventListener('shown.bs.modal', () => {
     // workaround "Copy to clipboard" .focus() scrolling down to <textarea>
     // note: doesn't work when <textarea> is completely out of view
-    textarea.setSelectionRange(0,0);
+    textarea.setSelectionRange(0, 0);
   });
 }
-
-exports.init = init;

@@ -31,23 +31,13 @@ Clone the repo and run `npm install` in the folder. Afterwards, use `npm start` 
 Thanks go to the authors of the following runtime dependencies:
 
 * [Ace] code editor
-* [bluebird.js] cancellable promises
 * [Bootstrap] with the [lumen] theme
-* [clipboard.js] one-click copy to clipboard
 * [D3] visualization and DOM manipulation library
-* [jQuery]
 * [js-yaml] parser & serializer
-* [lodash] and [lodash/fp] utilities
 
 [Ace]: https://ace.c9.io/
-[bluebird.js]: http://bluebirdjs.com/
-[Bootstrap]: https://getbootstrap.com/
-[clipboard.js]: https://clipboardjs.com/
 [D3]: https://d3js.org/
-[jQuery]: https://jquery.com
 [js-yaml]: https://github.com/nodeca/js-yaml
-[lodash]: https://github.com/lodash/lodash
-[lodash/fp]: https://github.com/lodash/lodash/wiki/FP-Guide
 [lumen]: https://bootswatch.com/lumen/
 
 ## Original Source

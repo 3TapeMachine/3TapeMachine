@@ -1,6 +1,10 @@
-input: '${2}'
-blank: '${3: }'
-start state: ${4:start}
-table:
-  ${4}:
-    ${5}
+name: '1-tape template'
+source code: |
+  # This is a template for a 1-tape Turing machine.
+  # Replace the placeholders with your own code. 
+  input: '${2}'
+  blank: '${3: }'
+  start state: ${4:start}
+  table:
+    ${4}:
+      ${5}

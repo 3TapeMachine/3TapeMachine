@@ -1,6 +1,6 @@
 *.log
 node_modules/
 .eslintcache
-
-
+package-lock.json
+.DS_Store
 /build/

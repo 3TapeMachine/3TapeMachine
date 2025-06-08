@@ -1,11 +1,10 @@
-'use strict';
+import * as d3 from 'd3';
+
 /**
  * Displays a table of keyboard shortcuts.
  */
 
-var d3 = require('d3');
-
-function identity(x) { return x; }
+const identity = x => x;
 
 /**
  * Renders a table, using three layers of list nesting: tbody, tr, td.
@@ -14,25 +13,21 @@ function identity(x) { return x; }
  * @return {D3Selection}            D3 selection of the <tbody> elements
  */
 function renderTable(data, table) {
-  var tbody = d3.select(table).selectAll('tbody')
-      .data(data)
+  const tbody = d3.select(table).selectAll('tbody')
+    .data(data)
     .enter().append('tbody');
 
-  var tr = tbody.selectAll('tr')
-      .data(identity)
+  const tr = tbody.selectAll('tr')
+    .data(identity)
     .enter().append('tr');
 
   tr.selectAll('td')
-      .data(identity)
+    .data(identity)
     .enter().append('td')
-      .html(identity);
+    .html(identity);
 
   return tbody;
 }
-
-
-// type Key = string;
-// type KeyList = [Key];
 
 // Key -> Key
 function abbreviateKey(key) {
@@ -49,40 +44,35 @@ function abbreviateKey(key) {
 
 // KeyList -> HTML
 function keylistToHTML(keys) {
-  return keys.map(function (key) {
-    return '<kbd>' + key + '</kbd>';
-  }).join('-');
+  return keys.map(key => `<kbd>${key}</kbd>`).join('-');
 }
 
 // Commands -> String -> KeyList
 function createGetKeylist(commands) {
-  var platform = commands.platform;
+  const platform = commands.platform;
   // workaround: some ace keybindings for Mac use Alt instead of Option
-  var altToOption = platform !== 'mac' ? identity : function (key) {
-    return (key === 'Alt') ? 'Option' : key;
-  };
+  const altToOption = platform !== 'mac'
+    ? identity
+    : key => (key === 'Alt' ? 'Option' : key);
 
-  return function getKeylist(name) {
-    return commands.commands[name].bindKey[platform].split('-').map(altToOption);
+  return function getKeylist(value) {
+    return commands.commands[value].bindKey[platform].split('-').map(altToOption);
   };
 }
-
 
 // Fills a <table> with some default keyboard shortcuts.
-function main(commands, table) {
-  var getKeylist = createGetKeylist(commands);
+export function main(commands, table) {
+  const getKeylist = createGetKeylist(commands);
 
-  return renderTable(entries.map(function (group) {
-    return group.map(function (d) {
-      return [
-        keylistToHTML(getKeylist(d.name).map(abbreviateKey)),
-        d.desc
-      ];
-    });
-  }), table);
+  return renderTable(entries.map(group =>
+    group.map(d => [
+      keylistToHTML(getKeylist(d.name).map(abbreviateKey)),
+      d.desc
+    ])
+  ), table);
 }
 
-var entries = [
+const entries = [
   [
     { name: 'save', desc: 'Load machine<br> <small>Save changes and load the machine.</small>' }
   ], [
@@ -99,6 +89,3 @@ var entries = [
     { name: 'replace', desc: 'Find and Replace' }
   ]
 ];
-
-
-exports.main = main;

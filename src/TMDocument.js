@@ -1,9 +1,5 @@
-'use strict';
-
-var KeyValueStorage = require('./storage').KeyValueStorage,
-    examples = require('./examples'),
-    util = require('./util'),
-    _ = require('lodash/fp');
+import { KeyValueStorage } from './storage.js';
+import * as examples from './examples1.js';
 
 /**
  * Document model (storage).
@@ -11,11 +7,11 @@ var KeyValueStorage = require('./storage').KeyValueStorage,
  *                       An ID is typically a timestamp. It should not contain '.'.
  */
 function TMDocument(docID) {
-  var preset = examples.get(docID);
+  const preset = examples.get(docID);
   Object.defineProperties(this, {
     id:     { value: docID },
     prefix: { value: 'doc.' + docID },
-    isExample: { value: preset ? true : false }
+    isExample: { value: !!preset }
   });
   // fall back to reading presets for example documents
   if (preset) {
@@ -24,8 +20,8 @@ function TMDocument(docID) {
       // names are read-only
       positionTable: useFallbackGet(preset, this, 'positionTable'),
       name: {
-        get: function () { return preset.name; },
-        set: function () {}, // don't err when removing (set = null)
+        get() { return preset.name; },
+        set() {}, // don't err when removing (set = null)
         enumerable: true
       }
     });
@@ -33,49 +29,52 @@ function TMDocument(docID) {
 }
 
 function useFallbackGet(preset, obj, prop) {
-  var proto = Object.getPrototypeOf(obj);
-  var desc = Object.getOwnPropertyDescriptor(proto, prop);
-  var get = desc.get;
+  const proto = Object.getPrototypeOf(obj);
+  const desc = Object.getOwnPropertyDescriptor(proto, prop);
+  const get = desc.get;
   desc.get = function () {
-    return util.coalesce(get.call(obj), preset[prop]);
+    const val = get.call(obj);
+    return val != null ? val : preset[prop];
   };
   return desc;
 }
 
 // internal method.
 TMDocument.prototype.path = function (path) {
-  return [this.prefix, path].join('.');
+  return `${this.prefix}.${path}`;
 };
 
-(function () {
-  var store = KeyValueStorage;
-  var read = store.read.bind(store);
-  var write = function (key, val) {
+(() => {
+  const store = KeyValueStorage;
+  const read = store.read.bind(store);
+  const write = (key, val) => {
     if (val != null) {
       store.write(key, val);
     } else {
       store.remove(key);
     }
   };
-  // var remove = store.remove.bind(store);
+
   function stringProp(path) {
     return {
-      get: function () { return read(this.path(path)); },
-      set: function (val) { write(this.path(path), val); },
+      get() { return read(this.path(path)); },
+      set(val) { write(this.path(path), val); },
       enumerable: true
     };
   }
 
-  var propDescriptors = {
+  const propDescriptors = {
     sourceCode: stringProp('diagram.sourceCode'),
     positionTable: {
-      get: function () {
-        return util.applyMaybe(parsePositionTable,
-          read(this.path('diagram.positions')));
+      get() {
+        const x = read(this.path('diagram.positions'));
+        return x == null ? null : parsePositionTable(x);
       },
-      set: function (val) {
-        write(this.path('diagram.positions'),
-          util.applyMaybe(stringifyPositionTable, val));
+      set(val) {
+        write(
+          this.path('diagram.positions'),
+          val == null ? null : stringifyPositionTable(val)
+        );
       },
       enumerable: true
     },
@@ -105,7 +104,7 @@ TMDocument.prototype.delete = function () {
  * @return {?string} The document ID if true, otherwise null.
  */
 TMDocument.IDFromNameStorageKey = function (string) {
-  var result = /^doc\.([^.]+)\.name$/.exec(string);
+  const result = /^doc\.([^.]+)\.name$/.exec(string);
   return result && result[1];
 };
 
@@ -115,10 +114,10 @@ TMDocument.IDFromNameStorageKey = function (string) {
  * @param {Function} listener
  */
 TMDocument.addOutsideChangeListener = function (listener) {
-  var re = /^doc\.([^.]+)\.(.+)$/;
+  const re = /^doc\.([^.]+)\.(.+)$/;
 
   KeyValueStorage.addStorageListener(function (e) {
-    var matches = re.exec(e.key);
+    const matches = re.exec(e.key);
     if (matches) {
       listener(matches[1], matches[2]);
     }
@@ -130,26 +129,31 @@ TMDocument.addOutsideChangeListener = function (listener) {
 /////////////////////////
 
 // JSON -> Object
-var parsePositionTable = JSON.parse;
+const parsePositionTable = JSON.parse;
 
 // PositionTable -> JSON
-var stringifyPositionTable = _.flow(
-  _.mapValues(truncateCoords(2)),
-  JSON.stringify
-);
+const stringifyPositionTable = val =>
+  JSON.stringify(
+    Object.fromEntries(
+      Object.entries(val).map(([k, v]) => [k, truncateCoords(2)(v)])
+    )
+  );
 
 // Truncate .x .y .px .py to 2 decimal places, to save space.
 function truncateCoords(decimalPlaces) {
-  var multiplier = Math.pow(10, decimalPlaces);
+  const multiplier = Math.pow(10, decimalPlaces);
   function truncate(value) {
-    return Math.round(value * multiplier)/multiplier;
+    return Math.round(value * multiplier) / multiplier;
   }
 
   return function (val) {
-    var result =  _(val).pick(['x','y','px','py']).mapValues(truncate).value();
-    result.fixed = val.fixed;
+    const result = {};
+    ['x', 'y', 'px', 'py'].forEach(key => {
+      if (val[key] !== undefined) result[key] = truncate(val[key]);
+    });
+    if ('fixed' in val) result.fixed = val.fixed;
     return result;
   };
 }
 
-module.exports = TMDocument;
+export default TMDocument;

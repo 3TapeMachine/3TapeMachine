@@ -1,53 +1,66 @@
-'use strict';
+/**
+ * Modern GitHub Gist API helper using fetch and native Promises.
+ * No jQuery or Bluebird required.
+ */
 
-var $ = require('jquery');
-var Promise = require('bluebird'); // eslint-disable-line no-shadow
-
-Promise.config({
-  cancellation: true
-});
-
-// On success, 'resolve' is called with the response data.
-// On failure, 'reject' is called with {xhr: jqXHR, status: string, error: string}.
-// To abort the request, use .cancel (from bluebird). Neither is called in that case.
-// jqXHR -> Promise
-function promisifyAjax(xhr) {
-  return new Promise(function (resolve, reject, onCancel) {
-    xhr.then(resolve, function (jqXHR, textStatus, errorThrown) {
-      reject({xhr: jqXHR, status: textStatus, error: errorThrown});
+/**
+ * Helper to make a cancellable fetch request.
+ * @param {RequestInfo} url
+ * @param {RequestInit} [options]
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<any>}
+ */
+function fetchJson(url, options = {}, signal) {
+  return fetch(url, { ...options, signal })
+    .then(async response => {
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw {
+          xhr: response,
+          status: response.status,
+          error: error.message || response.statusText
+        };
+      }
+      return response.json();
     });
-    onCancel && onCancel(function () {
-      try { xhr.abort(); } catch (e) {/* */}
-    });
-  });
 }
 
-// GistID -> Promise
-// @see promisifyAjax
-function getGist(gistID) {
-  return promisifyAjax($.ajax({
-    url: 'https://api.github.com/gists/' + gistID,
-    type: 'GET',
-    dataType: 'json',
-    accepts: 'application/vnd.github.v3+json' // specify API version for stability
-  }));
+/**
+ * Get a gist by ID.
+ * @param {string} gistID
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<any>}
+ */
+export function getGist(gistID, signal) {
+  return fetchJson(
+    `https://api.github.com/gists/${gistID}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/vnd.github.v3+json'
+      }
+    },
+    signal
+  );
 }
 
-// https://developer.github.com/v3/gists/#create-a-gist
-// @see promisifyAjax
-// {files: {[filename: string]: {content: string}},
-//  description?: string, public?: boolean} -> Promise
-function createGist(payload) {
-  // return Promise.delay(1000, {id: 'offlinetesting'});
-  return promisifyAjax($.ajax({
-    url: 'https://api.github.com/gists',
-    type: 'POST',
-    data: JSON.stringify(payload),
-    // headers: {Authorization: 'token DEVTOKEN'},
-    dataType: 'json', // response datatype
-    accepts: 'application/vnd.github.v3+json' // specify API version for stability
-  }));
+/**
+ * Create a new gist.
+ * @param {Object} payload
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<any>}
+ */
+export function createGist(payload, signal) {
+  return fetchJson(
+    'https://api.github.com/gists',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify(payload)
+    },
+    signal
+  );
 }
-
-exports.getGist = getGist;
-exports.createGist = createGist;
