@@ -1,11 +1,20 @@
 // main entry point for index.html.
-// important: make sure to coordinate variables and elements between the HTML and JS
 
 import TMDocumentController from './TMDocumentController.js';
 import DocumentMenu from './DocumentMenu.js';
 import examples from './examples1.js';
-import ace from 'ace-builds/src-noconflict/ace.js';
-import $ from 'jquery'; // for Bootstrap modal dialog events
+import { canUseLocalStorage } from './storage.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import * as bootstrap from 'bootstrap';
+
+import ace from 'ace-builds/src-min-noconflict/ace.js';
+// Make sure WebPack sees the optional Ace files
+import 'ace-builds/src-min-noconflict/theme-chrome.js';
+import 'ace-builds/src-min-noconflict/mode-yaml.js';
+import 'ace-builds/src-min-noconflict/ext-language_tools.js';
+import 'ace-builds/src-min-noconflict/worker-yaml.js';
+ace.config.set('basePath', '/build/');
+ace.config.set('workerPath', '/build/');
 
 /**
  * Concat an array of DOM Nodes into a DocumentFragment.
@@ -18,19 +27,13 @@ function toDocFragment(array) {
   return result;
 }
 
-// load up front so going offline doesn't break anything
-// (for snippet placeholders, used by "New blank document")
-ace.config.loadModule('ace/ext/language_tools');
-
 function getId(id) { return document.getElementById(id); }
 
 function addAlertPane(type, html) {
   getId('diagram-column').insertAdjacentHTML('afterbegin',
-    `<div class="alert alert-${type} alert-dismissible" role="alert">
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">×</span>
-      </button>
+    `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
       ${html}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>`);
 }
 
@@ -38,9 +41,9 @@ function addAlertPane(type, html) {
 // Compatibility Checks //
 //////////////////////////
 
-(() => {
+document.addEventListener('DOMContentLoaded', () => {
   // Warn when falling back to RAM-only storage
-  if (!(import('./storage.js')).canUseLocalStorage) {
+  if (!canUseLocalStorage) {
     addAlertPane('info', `<p>Local storage is unavailable. 
       Your browser could be in Private Browsing mode, or it might not support 
       <a href="http://caniuse.com/#feat=namevalue-storage" target="_blank">local storage</a>.</p>
@@ -57,17 +60,15 @@ function addAlertPane(type, html) {
   }
 
   // Warn about iOS local storage volatility
-  $(() => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-      getId('misc-tips-list').insertAdjacentHTML('afterbegin',
-        `<li><strong class="text-warning">Important note for iOS</strong>: 
-        iOS saves browser local storage in the cache folder, which is <strong>not backed up</strong>, and is 
-        <q cite="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#Browser_compatibility"><strong>subject to occasional clean up</strong>, 
-        at the behest of the OS, typically if space is short.</q></li>`);
-    }
-  });
-})();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    getId('misc-tips-list').insertAdjacentHTML('afterbegin',
+      `<li><strong class="text-warning">Important note for iOS</strong>: 
+      iOS saves browser local storage in the cache folder, which is <strong>not backed up</strong>, and is 
+      <q cite="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#Browser_compatibility"><strong>subject to occasional clean up</strong>, 
+      at the behest of the OS, typically if space is short.</q></li>`);
+  }
+});
 
 /////////////////////
 // Import & Export //
@@ -78,9 +79,9 @@ function importDocument(obj) {
   menu.duplicate(obj, { select: true, type: 'open' });
 }
 
-$(() => {
+document.addEventListener('DOMContentLoaded', () => {
   // Enable buttons now that handlers are ready
-  $('.tm-needsready').prop('disabled', false);
+  document.querySelectorAll('.tm-needsready').forEach(btn => btn.disabled = false);
 
   // Run import from URL query (if any)
   const importArgs = {
@@ -88,16 +89,19 @@ $(() => {
     importDocument
   };
   import('./sharing/import.js').then(mod => mod.runImport(importArgs));
+
   // Init import dialog
-  const $importPanel = $('#importPanel');
-  $importPanel.one('show.bs.modal', () => {
+  const importPanel = getId('importPanel');
+  importPanel.addEventListener('show.bs.modal', () => {
     import('./sharing/import-panel.js').then(mod => mod.init({
-      dialog: $importPanel[0],
+      dialog: importPanel,
       gistIDForm: getId('gistIDForm'),
       importArgs
     }));
   });
-  // Init export dialog
+});
+
+document.addEventListener('DOMContentLoaded', () => {
   const exportPanel = getId('exportPanel');
   import('./sharing/export-panel.js').then(mod => mod.init({
     dialog: exportPanel,
@@ -105,7 +109,7 @@ $(() => {
       controller.save(); // IMPORTANT: save changes, otherwise data model is out of date
       return menu.currentDocument;
     },
-    getIsSynced: controller.getIsSynced.bind(controller),
+    getIsSynced: () => controller.getIsSynced(),
     gistContainer: getId('shareGistContainer'),
     downloadContainer: getId('exportDownloadContainer'),
     textarea: exportPanel.querySelector('textarea')
@@ -158,8 +162,8 @@ const menu = (() => {
 
   // Refresh the "Edit" menu items depending on document vs. example.
   const refreshEditMenu = (() => {
-    const renameLink = document.querySelector('[data-target="#renameDialog"]');
-    const deleteLink = document.querySelector('[data-target="#deleteDialog"]');
+    const renameLink = document.querySelector('[data-bs-target="#renameDialog"]');
+    const deleteLink = document.querySelector('[data-bs-target="#deleteDialog"]');
     let wasExample;
     function renameExample() {
       duplicateDocument();
@@ -171,15 +175,15 @@ const menu = (() => {
         if (!isExample) {
           renameLink.textContent = 'Rename…';
           renameLink.removeEventListener('click', renameExample);
-          renameLink.setAttribute('data-toggle', 'modal');
+          renameLink.setAttribute('data-bs-toggle', 'modal');
           deleteLink.textContent = 'Delete…';
-          deleteLink.setAttribute('data-target', '#deleteDialog');
+          deleteLink.setAttribute('data-bs-target', '#deleteDialog');
         } else {
           renameLink.textContent = 'Rename a copy…';
           renameLink.addEventListener('click', renameExample);
-          renameLink.removeAttribute('data-toggle');
+          renameLink.removeAttribute('data-bs-toggle');
           deleteLink.textContent = 'Reset this example…';
-          deleteLink.setAttribute('data-target', '#resetExampleDialog');
+          deleteLink.setAttribute('data-bs-target', '#resetExampleDialog');
         }
         wasExample = isExample;
       }
@@ -201,7 +205,7 @@ const menu = (() => {
     }
   }
 
-  const $renameDialog = $(getId('renameDialog'));
+  const renameDialog = document.getElementById('renameDialog');
   [
     { id: 'tm-doc-action-duplicate', callback: duplicateDocument },
     { id: 'tm-doc-action-newblank', callback: newBlankDocument }
@@ -210,10 +214,13 @@ const menu = (() => {
       e.preventDefault();
       item.callback(e);
 
-      $renameDialog.modal({ keyboard: false })
-        .one('hidden.bs.modal', () => {
-          controller.editor.focus();
-        });
+      // Show the modal using Bootstrap 5's JS API
+      const modal = new bootstrap.Modal(renameDialog, { keyboard: false });
+      modal.show();
+
+      renameDialog.addEventListener('hidden.bs.modal', () => {
+        controller.editor.focus();
+      }, { once: true });
     });
   });
 })();
@@ -224,25 +231,25 @@ const menu = (() => {
 
 (() => {
   // Rename
-  const $renameDialog = $(getId('renameDialog'));
+  const renameDialog = document.getElementById('renameDialog');
   const renameBox = getId('renameDialogInput');
-  $renameDialog
-    .on('show.bs.modal', () => {
-      renameBox.value = menu.currentOption.text;
-    })
-    .on('shown.bs.modal', () => {
-      renameBox.select();
-    })
-    .on('hidden.bs.modal', () => {
-      const newName = renameBox.value;
-      if (menu.currentOption.text !== newName) {
-        menu.rename(newName);
-      }
-      renameBox.value = '';
-    });
+  renameDialog.addEventListener('show.bs.modal', () => {
+    renameBox.value = menu.currentOption.text;
+  });
+  renameDialog.addEventListener('shown.bs.modal', () => {
+    renameBox.select();
+  });
+  renameDialog.addEventListener('hidden.bs.modal', () => {
+    const newName = renameBox.value;
+    if (menu.currentOption.text !== newName) {
+      menu.rename(newName);
+    }
+    renameBox.value = '';
+  });
   document.getElementById('renameDialogForm').addEventListener('submit', e => {
     e.preventDefault();
-    $renameDialog.modal('hide');
+    const modal = bootstrap.Modal.getInstance(renameDialog);
+    if (modal) modal.hide();
   });
 
   // Delete
@@ -301,7 +308,8 @@ controller.editor.commands.addCommand({
   }
 });
 controller.editor.session.setUseWrapMode(true);
-$(() => {
+
+document.addEventListener('DOMContentLoaded', () => {
   try {
     import('./kbdshortcuts.js').then(mod => mod.main(controller.editor.commands, getId('kbdShortcutTable')));
   } catch {
@@ -331,7 +339,7 @@ window.addEventListener('blur', () => {
   // ...and the other tab loads it.
   let isReloading = false;
   import('./TMDocument.js').then(mod => {
-    mod.addOutsideChangeListener((docID, prop) => {
+    mod.TMDocument.addOutsideChangeListener((docID, prop) => {
       if (docID === controller.getDocument().id && prop !== 'name' && !isReloading) {
         isReloading = true;
         setTimeout(() => {

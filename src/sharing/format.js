@@ -67,7 +67,7 @@ export function stringifyDocument(doc) {
         : { x: pos.x, y: pos.y, fixed: false }
     )
   );
-  return jsyaml.safeDump(out, {
+  return jsyaml.dump(out, {
     flowLevel: 2,       // positions: one state per line
     lineWidth: -1,      // don't wrap lines
     noRefs: true,       // no aliases/references are used

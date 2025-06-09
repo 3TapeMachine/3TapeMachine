@@ -134,27 +134,27 @@ export default function StateViz(container, nodes, linkArray) {
   const colors = d3.scaleOrdinal(d3.schemeCategory10);
 
   const svg = appendSVGTo(container, h / w);
-  svg.attr({
-    viewBox: `0 0 ${w} ${h}`,
-    version: '1.1',
-    xmlns: 'http://www.w3.org/2000/svg',
-    'xmlns:xlink': 'http://www.w3.org/1999/xlink'
-  });
+  svg
+    .attr('viewBox', `0 0 ${w} ${h}`)
+    .attr('version', '1.1')
+    .attr('xmlns', 'http://www.w3.org/2000/svg')
+    .attr('xmlns:xlink', 'http://www.w3.org/1999/xlink');
 
   // Force Layout
-
   function dragstart(d) {
-    d.fixed = true;
+    force.alphaTarget(0.3).restart();
     svg.transition().style('box-shadow', 'inset 0 0 1px gold');
   }
-  function dragend() {
+  function dragend(d) {
+    force.alphaTarget(0);
     svg.transition().style('box-shadow', null);
   }
   function releasenode(d) {
-    d.fixed = false;
-    force.resume();
+    d.fx = null;
+    d.fy = null;
+    force.alpha(1).restart();
   }
-
+  
   const nodeArray = Array.isArray(nodes) ? nodes : Object.values(nodes);
   this.__stateMap = nodes;
 
@@ -163,11 +163,19 @@ export default function StateViz(container, nodes, linkArray) {
     .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(w / 2, h / 2))
     .alpha(1)
-    .alphaDecay(0.0228); // similar to .start() in v3
+    .alphaDecay(0.0228);
 
-  const drag = force.drag()
-    .on('dragstart', dragstart)
-    .on('dragend', dragend);
+  const drag = d3.drag()
+    .on('start', function (_evt, d) {
+      d.fx = d.x;
+      d.fy = d.y;
+      dragstart(d);
+    })
+    .on('end', function (_evt, d) {
+      d.fx = null;
+      d.fy = null;
+      dragend(d);
+    });
 
   // Edges
   const edgeCounter = new EdgeCounter(linkArray);
@@ -185,12 +193,9 @@ export default function StateViz(container, nodes, linkArray) {
     const group = d3.select(this);
     const edgepath = group
       .append('path')
-      .attr({
-        class: 'edgepath',
-        id: `edgepath${edgeIndex}`
-      })
+      .attr('class', 'edgepath')
+      .attr('id', `edgepath${edgeIndex}`)
       .each(function (d) { d.domNode = this; });
-
     const labels = group.selectAll('.edgelabel')
       .data(edgeD.labels).enter()
       .append('text')
@@ -264,14 +269,12 @@ export default function StateViz(container, nodes, linkArray) {
   svgdefs.selectAll('marker')
     .data(['arrowhead', 'active-arrowhead', 'reversed-arrowhead', 'reversed-active-arrowhead'])
     .enter().append('marker')
-    .attr({
-      id: d => d,
-      viewBox: '0 -5 10 10',
-      refX: d => (d.startsWith('reversed-')) ? 0 : 10,
-      orient: 'auto',
-      markerWidth: 10,
-      markerHeight: 10
-    })
+    .attr('id', d => d)
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', d => (d.startsWith('reversed-')) ? 0 : 10)
+    .attr('orient', 'auto')
+    .attr('markerWidth', 10)
+    .attr('markerHeight', 10)
     .append('path')
     .attr('d', 'M 0 -5 L 10 0 L 0 5 Z')
     .attr('transform', d => (d.startsWith('reversed-')) ? 'rotate(180 5 0)' : null);
@@ -302,19 +305,19 @@ export default function StateViz(container, nodes, linkArray) {
 
   // Force Layout Update
   force.on('tick', function () {
-    nodecircles.attr({
-      cx: d => d.x = limitRange(nodeRadius, w - nodeRadius, d.x),
-      cy: d => d.y = limitRange(nodeRadius, h - nodeRadius, d.y)
-    });
+    nodecircles
+      .attr('cx', d => d.x = limitRange(nodeRadius, w - nodeRadius, d.x))
+      .attr('cy', d => d.y = limitRange(nodeRadius, h - nodeRadius, d.y));
 
-    nodelabels.attr('x', d => d.x)
+    nodelabels
+      .attr('x', d => d.x)
       .attr('y', d => d.y);
 
     edgepaths.attr('d', d => d.getPath());
 
     edgegroups.each(function (d) { d.refreshLabels(); });
 
-    if (nodeArray.every(d => d.fixed)) {
+    if (nodeArray.every(d => d.fx !== undefined && d.fy !== undefined)) {
       force.stop();
     }
   });
@@ -340,6 +343,6 @@ Object.defineProperty(StateViz.prototype, 'positionTable', {
   get() { return getPositionTable(this.__stateMap); },
   set(posTable) {
     setPositionTable(posTable, this.__stateMap);
-    this.force.resume();
+    this.force.alpha(1).restart();
   }
 });

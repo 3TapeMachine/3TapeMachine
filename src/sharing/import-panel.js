@@ -10,10 +10,15 @@ export function init(args) {
   const importArgs = args.importArgs;
 
   function hideDialog() {
-    // Hide modal (Bootstrap 4+)
+  // Hide modal (Bootstrap 4+)
     dialog.classList.remove('show');
     dialog.setAttribute('aria-hidden', 'true');
     dialog.style.display = 'none';
+
+    // Remove Bootstrap modal backdrop if present
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
+    document.body.classList.remove('modal-open');
 
     // Workaround for opening another modal before a modal is done hiding.
     const nextDialog = importArgs.dialogNode;
@@ -24,7 +29,6 @@ export function init(args) {
       }
     });
   }
-
   // Panel: From GitHub gist
   gistIDForm.addEventListener('submit', e => {
     e.preventDefault();
@@ -37,7 +41,7 @@ export function init(args) {
   // Panel: From files
   (() => {
     // TODO: factor out element IDs and containers into interface
-    const panelBody = document.querySelector('#importFilesPanel > .panel-body');
+    const panelBody = document.querySelector('#importFilesPanel > .card-body');
     // <input type="file">
     const fileInput = panelBody.querySelector('input[type="file"]');
     const importFilesButton = document.getElementById('importFilesButton');
@@ -67,12 +71,10 @@ export function init(args) {
 // () -> HTMLButtonElement
 function createCloseIcon() {
   const button = document.createElement('button');
-  button.className = 'close';
+  button.className = 'btn-close';
   button.setAttribute('aria-label', 'Close');
-  button.innerHTML = '<span aria-hidden="true">&times;</span>';
   return button;
 }
-
 // Show import outcome (success/failure) and error (if any)
 // ({status: HTMLElement, details: HTMLElement}, ?Error) -> void
 function showImportContentOutcome(containers, error) {
@@ -117,10 +119,10 @@ function showImportContentOutcome(containers, error) {
   if (error) {
     const statusSummary = showErrorDetails();
     newstatus.attr('class', 'text-danger')
-      .html('<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span> ' + statusSummary);
+      .html('<i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i> ' + statusSummary);
   } else {
     newstatus.attr('class', 'text-success')
-      .html('<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Import succeeded')
+      .html('<i class="bi bi-check-circle-fill" aria-hidden="true"></i> Import succeeded')
       .transition()
       .delay(2500)
       .duration(2000)

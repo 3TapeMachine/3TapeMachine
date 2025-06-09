@@ -1,6 +1,9 @@
 import TMSimulator from './TMSimulator.js';
 import * as parser from './parser.js';
-import ace from 'ace-builds/src-noconflict/ace.js';
+import ace from 'ace-builds/src-min-noconflict/ace.js';
+// These two are for WebPack to include the ace modes.
+import 'ace-builds/src-min-noconflict/mode-yaml.js';
+//import 'ace-builds/src-min-noconflict/undomanager.js';
 import * as d3 from 'd3';
 
 const { TMSpecError, YAMLException } = parser;
@@ -150,7 +153,7 @@ export default class TMDocumentController {
   /////////////////////////
 
   setAlertErrors(errors) {
-    const alerts = d3.select(self.containers.editorAlerts).selectAll('.alert')
+    const alerts = d3.select(this.containers.editorAlerts).selectAll('.alert')
       .data(errors, e => String(e)); // key by error description
 
     alerts.exit().remove();
@@ -160,7 +163,7 @@ export default class TMDocumentController {
       .attr('class', 'alert alert-danger')
       .attr('role', 'alert')
       .each(function (e) {
-        const div = d3.select(self);
+        const div = d3.select(this);
         if (e instanceof YAMLException) {
           const annot = aceAnnotationFromYAMLException(e);
           const lineNum = annot.row + 1; // annotation lines start at 0; editor starts at 1
@@ -169,10 +172,10 @@ export default class TMDocumentController {
             .text('Syntax error on ')
             .append('a')
             .text('line ' + lineNum)
-            .on('click', function(event) {
+            .on('click', function (evt) {
               self.editor.gotoLine(lineNum, column, true);
               self.editor.focus();
-              event.preventDefault();
+              evt.preventDefault();
             })
             .attr('href', '#' + self.containers.editor.id);
           div.append('br');

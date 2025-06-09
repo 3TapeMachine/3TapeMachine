@@ -36,7 +36,7 @@ function pulseEdge(edge) {
     .transition()
     .duration(0)
     .on('start', function () {
-      d3.select(self).classed('active-edge', false);
+      d3.select(this).classed('active-edge', false);
     })
     .style('stroke', null)
     .style('stroke-width', null);

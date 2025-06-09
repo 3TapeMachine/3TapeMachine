@@ -38,9 +38,9 @@ export default class TMSimulator {
 
     // The innerHTML for the "Run" button.
     this.htmlForRunButton =
-    '<span class="glyphicon glyphicon-play" aria-hidden="true"></span><br>Run';
+    '<i class="bi bi-play-fill"></i><br>Run';
     this.htmlForPauseButton =
-    '<span class="glyphicon glyphicon-pause" aria-hidden="true"></span><br>Pause';
+    '<i class="bi bi-pause-fill"></i><br>Pause';
 
     this.clear();
   }

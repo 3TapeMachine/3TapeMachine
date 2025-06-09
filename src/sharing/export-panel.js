@@ -195,6 +195,8 @@ export function init(args) {
       gistPromise = generateGist(gistContainer, e.target, filename, contents);
     });
 
+    // Clear previous download links
+    downloadContainer.textContent = '';
     // "Download document" button link
     downloadContainer.appendChild(createDownloadLink(filename, contents));
     // <textarea> for document contents

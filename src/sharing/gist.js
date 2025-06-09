@@ -1,7 +1,6 @@
-/**
- * Modern GitHub Gist API helper using fetch and native Promises.
- * No jQuery or Bluebird required.
- */
+// /**
+//  * Modern GitHub Gist API helper using fetch and native Promises.
+//  */
 
 /**
  * Helper to make a cancellable fetch request.
@@ -43,6 +42,8 @@ export function getGist(gistID, signal) {
     signal
   );
 }
+
+/* Unauthenticated gist support doesn't seem to be working */
 
 /**
  * Create a new gist.
