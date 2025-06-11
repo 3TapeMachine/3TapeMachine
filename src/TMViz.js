@@ -1,4 +1,5 @@
 import { TuringMachine1Tape } from './TuringMachine1Tape.js';
+import { TuringMachine3Tape } from './TuringMachine3Tape.js';
 import TapeViz from './tape/TapeViz.js';
 import StateGraph from './state-diagram/StateGraph.js';
 import StateViz from './state-diagram/StateViz.js';
@@ -36,6 +37,7 @@ function pulseEdge(edge) {
     .transition()
     .duration(0)
     .on('start', function () {
+      // eslint-disable-next-line no-invalid-this
       d3.select(this).classed('active-edge', false);
     })
     .style('stroke', null)
@@ -48,6 +50,15 @@ function addTape(div, spec) {
     9,
     spec.blank,
     spec.input ? String(spec.input).split('') : []
+  );
+}
+
+function addBlankTape(div, spec) {
+  return new TapeViz(
+    div.append('svg').attr('class', 'tm-tape'),
+    9,
+    spec.blank,
+    []
   );
 }
 
@@ -87,12 +98,22 @@ export default class TMViz {
         });
       }
     };
-
-    this.machine = new TuringMachine1Tape(
-      animatedTransition(graph, animateAndContinue),
-      spec.startState,
-      addTape(div, spec)
-    );
+    if(spec.type === '1-tape') {
+      this.machine = new TuringMachine1Tape(
+        animatedTransition(graph, animateAndContinue),
+        spec.startState,
+        addTape(div, spec),
+      );
+    }
+    else if(spec.type === '3-tape') {
+      this.machine = new TuringMachine3Tape(
+        spec.transition,
+        spec.startState,
+        addTape(div, spec),
+        addBlankTape(div, spec),
+        addBlankTape(div, spec)
+      );
+    }
 
     // intercept and animate when the state is set
     watchInit(this.machine, 'state', (prop, oldstate, newstate) => {
