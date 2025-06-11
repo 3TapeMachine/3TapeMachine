@@ -42,10 +42,15 @@ function addAlertPane(type, html) {
 //////////////////////////
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ***FIX***: Manually initialize all Bootstrap dropdowns.
+  // This is sometimes required when using Bootstrap as a JS module.
+  const dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+  [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl));
+
   // Warn when falling back to RAM-only storage
   if (!canUseLocalStorage) {
     addAlertPane('info', `<p>Local storage is unavailable. 
-      Your browser could be in Private Browsing mode, or it might not support 
+      Your browser could be in Private Browse mode, or it might not support 
       <a href="http://caniuse.com/#feat=namevalue-storage" target="_blank">local storage</a>.</p>
       <strong>Any changes will be lost after leaving the webpage.</strong>`);
   }
@@ -204,24 +209,20 @@ const menu = (() => {
       controller.loadEditorSource();
     }
   }
-
-  const renameDialog = document.getElementById('renameDialog');
+  
+  // ***FIX***: Removed incorrect logic that showed the "Rename" dialog
+  // for "Duplicate" and "New" actions.
   [
     { id: 'tm-doc-action-duplicate', callback: duplicateDocument },
     { id: 'tm-doc-action-newblank', callback: newBlankDocument }
   ].forEach(item => {
-    document.getElementById(item.id).addEventListener('click', e => {
-      e.preventDefault();
-      item.callback(e);
-
-      // Show the modal using Bootstrap 5's JS API
-      const modal = new bootstrap.Modal(renameDialog, { keyboard: false });
-      modal.show();
-
-      renameDialog.addEventListener('hidden.bs.modal', () => {
-        controller.editor.focus();
-      }, { once: true });
-    });
+    const element = document.getElementById(item.id);
+    if (element) {
+      element.addEventListener('click', e => {
+        e.preventDefault();
+        item.callback(e);
+      });
+    }
   });
 })();
 
