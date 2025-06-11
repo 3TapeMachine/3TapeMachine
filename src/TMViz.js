@@ -98,14 +98,14 @@ export default class TMViz {
         });
       }
     };
-    if(spec.type === '1-tape') {
+    if(spec.type === '1tape') {
       this.machine = new TuringMachine1Tape(
         animatedTransition(graph, animateAndContinue),
         spec.startState,
-        addTape(div, spec),
+        addTape(div, spec)
       );
     }
-    else if(spec.type === '3-tape') {
+    else if(spec.type === '3tape') {
       this.machine = new TuringMachine3Tape(
         spec.transition,
         spec.startState,
