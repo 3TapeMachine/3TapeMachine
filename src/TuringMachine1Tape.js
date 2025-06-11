@@ -1,33 +1,4 @@
-import './tape/Tape.js';
-
-/**
- * MoveHead and MoveTape enums for tape movement.
- */
-
-export const MoveHead = Object.freeze({
-  left:  { toString: () => 'L' },
-  right: { toString: () => 'R' },
-  stay:  { toString: () => 'S' }
-});
-export const MoveTape = Object.freeze({
-  left: MoveHead.right,
-  right: MoveHead.left,
-  stay: MoveHead.stay
-});
-
-/**
- * Moves the tape head in the specified direction.
- * @param {Object} tape
- * @param {Object} direction
- */
-function move(tape, direction) {
-  switch (direction) {
-    case MoveHead.right: tape.headRight(); break;
-    case MoveHead.left:  tape.headLeft();  break;
-    case MoveHead.stay:  tape.headStay();  break;
-    default: throw new TypeError('not a valid tape movement: ' + String(direction));
-  }
-}
+import {move }  from './tape/Tape.js';
 
 /**
  * TuringMachine class.

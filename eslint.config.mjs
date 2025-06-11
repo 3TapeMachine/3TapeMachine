@@ -35,7 +35,6 @@ export default defineConfig([{
       },
     }],
 
-    "linebreak-style": [2, "unix"],
     semi: [1, "always"],
 
     "space-before-function-paren": [1, {
