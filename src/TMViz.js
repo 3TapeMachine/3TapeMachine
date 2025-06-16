@@ -18,8 +18,9 @@ function animatedTransition(graph, animationCallback) {
     if (tuple == null) return null;
     animationCallback(tuple.edge);
     return tuple.instruction;
+  }
   };
-}
+
 
 /**
  * Default edge animation callback.
@@ -78,12 +79,11 @@ export default class TMViz {
       graph.getVertexMap(),
       graph.getEdges()
     );
-    if (posTable !== undefined) {
-      this.positionTable = posTable;
-    }
-
-    this.edgeAnimation = pulseEdge;
-    this.stepInterval = 100;
+  if (posTable !== undefined) {
+    this.positionTable = posTable;
+  }
+  this.edgeAnimation = pulseEdge;
+  this.stepInterval = 100;
 
     this.__parentDiv = div;
     this.__spec = spec;
@@ -126,14 +126,13 @@ export default class TMViz {
     // Therefore, detecting halting always requires its own step (for consistency).
     this.isHalted = false;
 
-    let isRunning = false;
     Object.defineProperty(this, 'isRunning', {
       configurable: true,
-      get() { return isRunning; },
+      get() { return this._isRunning || false; },
       set(value) {
-        if (isRunning !== value) {
-          isRunning = value;
-          if (isRunning) this.step();
+        if ((this._isRunning || false) !== value) {
+          this._isRunning = value;
+          if (this._isRunning) this.step();
         }
       }
     });
@@ -156,14 +155,19 @@ export default class TMViz {
     this.isRunning = false;
     this.isHalted = false;
     this.machine.state = this.__spec.startState;
-    this.machine.tape.domNode.remove();
-    this.machine.tape = addTape(this.__parentDiv, this.__spec);
-  }
-
-  get positionTable() {
-    return this.stateviz.positionTable;
-  }
-  set positionTable(posTable) {
-    this.stateviz.positionTable = posTable;
-  }
-}
+    if (this.__spec.type === '3-tape') {
+      // Remove all three tape SVGs and recreate them
+      this.machine.tape1.domNode.remove();
+      this.machine.tape2.domNode.remove();
+      this.machine.tape3.domNode.remove();
+      this.machine.tape1 = addTape(this.__parentDiv, this.__spec);
+      this.machine.tape2 = addBlankTape(this.__parentDiv, this.__spec);
+      this.machine.tape3 = addBlankTape(this.__parentDiv, this.__spec);
+    } else {
+      // 1-tape case (original logic)
+      this.machine.tape.domNode.remove();
+      this.machine.tape = addTape(this.__parentDiv, this.__spec);
+        }}
+      
+    }
+  
