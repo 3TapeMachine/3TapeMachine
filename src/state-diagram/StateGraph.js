@@ -1,8 +1,6 @@
 /**
  * Use a transition table to derive the graph (vertices & edges) for a D3 diagram.
  * Edges with the same source and target are combined.
- * NB. In addition to single symbols, comma-separated symbols are supported.
- * e.g. symbol string '0,1,,,I' -> symbols [0,1,',','I'].
  * @param {Object} table - TransitionTable
  * @returns {{graph: Object, edges: Array}}
  */
@@ -11,7 +9,7 @@ function deriveGraph(table) {
   const graph = Object.fromEntries(
     Object.entries(table).map(([state, transitions]) => [
       state,
-      { label: state, transitions }
+      { label: state, transitions },
     ])
   );
 
@@ -27,7 +25,7 @@ function deriveGraph(table) {
           cache[target] = {
             source: vertex,
             target: graph[target],
-            labels: []
+            labels: [],
           };
           allEdges.push(cache[target]);
         }
@@ -36,25 +34,17 @@ function deriveGraph(table) {
       }
 
       Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
-        // Handle comma-separated symbols.
-        // Recreate array by splitting on ','. Treat 2 consecutive ',' as , ','.
-        const symbols = symbolKey.split(',').reduce((acc, x) => {
-          if (x === '' && acc[acc.length - 1] === '') {
-            acc[acc.length - 1] = ',';
-          } else {
-            acc.push(x);
-          }
-          return acc;
-        }, []);
+        // CHANGE: For multi-tape machines, the symbolKey is the entire comma-separated string.
+        // The old logic tried to split them, which is incorrect for multi-tape lookup.
+        const symbols = symbolKey.split(',');
         const target = instruct.state != null ? instruct.state : state;
         const edge = edgeTo(target, labelFor(symbols, instruct));
 
-        symbols.forEach(symbol => {
-          stateTransitions[symbol] = {
-            instruction: normalize(state, symbol, instruct),
-            edge
-          };
-        });
+        // CHANGE: The key for the transition map is the full symbolKey itself.
+        stateTransitions[symbolKey] = {
+          instruction: normalize(state, symbols, instruct),
+          edge,
+        };
       });
 
       return stateTransitions;
@@ -70,9 +60,10 @@ function normalize(state, symbol, instruction) {
 }
 
 function labelFor(symbols, action) {
-  const rightSide =
-    (action.symbol == null ? '' : visibleSpace(String(action.symbol)) + ',') +
-    String(action.move);
+  // This function now correctly handles multi-tape labels.
+  const writeSymbols = action.write ? action.write.map(visibleSpace).join(',') : symbols.map(visibleSpace).join(',');
+  const moveSymbols = action.move ? action.move.join(',') : '';
+  const rightSide = writeSymbols + ',' + moveSymbols;
   return symbols.map(visibleSpace).join(',') + '→' + rightSide;
 }
 
@@ -93,40 +84,35 @@ export default class StateGraph {
     const derived = deriveGraph(table);
     Object.defineProperties(this, {
       __graph: { value: derived.graph },
-      __edges: { value: derived.edges }
+      __edges: { value: derived.edges },
     });
   }
 
-  /**
-   * Returns the mapping from states to vertices (D3 layout "nodes").
-   * @return { {[state: string]: Object} }
-   */
   getVertexMap() {
     return this.__graph;
   }
 
-  /**
-   * D3 layout "links".
-   */
   getEdges() {
     return this.__edges;
   }
 
-  /**
-   * Look up a state's corresponding D3 "node".
-   */
   getVertex(state) {
     return this.__graph[state];
   }
 
   /**
-   * Get the instruction and edge for a given state and symbol.
+   * Get the instruction and edge for a given state and symbol(s).
+   * @param {string} state
+   * @param {string|string[]} symbol - A single symbol or an array of symbols for multi-tape machines.
    */
   getInstructionAndEdge(state, symbol) {
     const vertex = this.__graph[state];
     if (vertex === undefined) {
       throw new Error('not a valid state: ' + String(state));
     }
-    return vertex.transitions && vertex.transitions[symbol];
+
+    // CHANGE: If the symbol is an array (from a multi-tape machine), join it to create the key.
+    const key = Array.isArray(symbol) ? symbol.join(',') : symbol;
+    return vertex.transitions && vertex.transitions[key];
   }
 }
