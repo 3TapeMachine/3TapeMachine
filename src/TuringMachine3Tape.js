@@ -1,35 +1,25 @@
-import {move }  from './tape/Tape.js';
+import { move } from './tape/Tape.js';
 
 /**
- * TuringMachine class.
- * 
- * The transition table is a map from a state to an array of possible matches.
- * Each array element is an object with a 3-character 'pattern; and an 'instruction'
- * Each instruction has all or none of move1, move2, and move3 tape operations,
- *     all or none of write1, write2, and write3 one-character symbols to write to the tape,
- *     and an optional next property to change states.
- * 
+ * TuringMachine3Tape class.
+ * This class is now driven by a transition *function* provided by TMViz,
+ * which allows for state graph animations.
  */
 export class TuringMachine3Tape {
   /**
-   * @param {*} transitions
-   * @param {*} startState
-   * @param {*} tape1
-   * @param {*} tape2
-   * @param {*} tape3
-   * @param String wild 
+   * @param {Function} transitionFunction A function that takes (state, [s1, s2, s3]) and returns an instruction.
+   * @param {string} startState The initial state of the machine.
+   * @param {TapeViz[]} tapes An array containing the three tape visualization objects.
    */
-  constructor(transitions, startState, tape1, tape2, tape3, wild= null) {
-    this.transitions = transitions;
+  constructor(transitionFunction, startState, tapes) {
+    this.transitionFunction = transitionFunction;
     this.state = startState;
-    this.tape1 = tape1;
-    this.tape2 = tape2;
-    this.tape3 = tape3;
-    this.wild = wild;
+    // CHANGE: Store tapes in an array for easier management.
+    this.tapes = tapes;
   }
 
   toString() {
-    return `${this.state}\n${this.tape1}\n${this.tape2}\n${this.tape3}`;
+    return `${this.state}\n${this.tapes[0]}\n${this.tapes[1]}\n${this.tapes[2]}`;
   }
 
   /**
@@ -40,41 +30,35 @@ export class TuringMachine3Tape {
     const instruct = this.nextInstruction;
     if (instruct == null) return false;
 
-    if('write1' in instruct)
-      this.tape1.write(instruct.write1);
-    if('write2' in instruct)
-      this.tape2.write(instruct.write2);
-    if('write3' in instruct)
-      this.tape3.write(instruct.write3);
-    if('move1' in instruct)
-      move(this.tape1, instruct.move1);
-    if('move2' in instruct)
-      move(this.tape2, instruct.move2);
-    if('move3' in instruct)
-      move(this.tape3, instruct.move3);
-    if('state' in instruct)
+    // CHANGE: The instruction format from StateGraph uses 'write' and 'move' arrays.
+    if (instruct.write) {
+      this.tapes[0].write(instruct.write[0]);
+      this.tapes[1].write(instruct.write[1]);
+      this.tapes[2].write(instruct.write[2]);
+    }
+    if (instruct.move) {
+      move(this.tapes[0], instruct.move[0]);
+      move(this.tapes[1], instruct.move[1]);
+      move(this.tapes[2], instruct.move[2]);
+    }
+    if (instruct.state) {
       this.state = instruct.state;
+    }
 
     return true;
   }
 
   get nextInstruction() {
-    for(const transition of this.transitions[this.state] || []) {
-      const read1 = transition.pattern[0];
-      const read2 = transition.pattern[1];
-      const read3 = transition.pattern[2];
-      if ((read1 === this.wild || read1 === this.tape1.read()) &&
-          (read2 === this.wild || read2 === this.tape2.read()) && 
-          (read3 === this.wild || read3 === this.tape3.read())) {
-        return transition.instruction;
-      }
-    }
-    // No matching transition found, machine halts
-    return null;
+    // CHANGE: Read from all three tapes and call the transition function.
+    const readSymbols = [
+      this.tapes[0].read(),
+      this.tapes[1].read(),
+      this.tapes[2].read(),
+    ];
+    return this.transitionFunction(this.state, readSymbols);
   }
 
   get isHalted() {
     return this.nextInstruction == null;
   }
 }
-
