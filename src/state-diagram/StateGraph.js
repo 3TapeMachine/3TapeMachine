@@ -34,13 +34,10 @@ function deriveGraph(table) {
       }
 
       Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
-        // CHANGE: For multi-tape machines, the symbolKey is the entire comma-separated string.
-        // The old logic tried to split them, which is incorrect for multi-tape lookup.
         const symbols = symbolKey.split(',');
         const target = instruct.state != null ? instruct.state : state;
         const edge = edgeTo(target, labelFor(symbols, instruct));
 
-        // CHANGE: The key for the transition map is the full symbolKey itself.
         stateTransitions[symbolKey] = {
           instruction: normalize(state, symbols, instruct),
           edge,
@@ -59,13 +56,23 @@ function normalize(state, symbol, instruction) {
   return { state, symbol, ...instruction };
 }
 
+/**
+ * FIX: This function is updated to be more robust. It checks if action.write
+ * and action.move are arrays before attempting to call .join() on them.
+ */
 function labelFor(symbols, action) {
-  // This function now correctly handles multi-tape labels.
-  const writeSymbols = action.write ? action.write.map(visibleSpace).join(',') : symbols.map(visibleSpace).join(',');
-  const moveSymbols = action.move ? action.move.join(',') : '';
+  const writeSymbols = Array.isArray(action.write)
+    ? action.write.map(visibleSpace).join(',')
+    : action.write || symbols.map(visibleSpace).join(',');
+
+  const moveSymbols = Array.isArray(action.move)
+    ? action.move.join(',')
+    : action.move || '';
+
   const rightSide = writeSymbols + ',' + moveSymbols;
   return symbols.map(visibleSpace).join(',') + '→' + rightSide;
 }
+
 
 // replace ' ' with '␣'.
 function visibleSpace(c) {
@@ -74,10 +81,6 @@ function visibleSpace(c) {
 
 /**
  * Aids rendering and animating a transition table in D3.
- *
- * • Generates the vertices and edges ("nodes" and "links") for a D3 diagram.
- * • Provides mapping of each state to its vertex and each transition to its edge.
- * @param {Object} table - TransitionTable
  */
 export default class StateGraph {
   constructor(table) {
@@ -100,18 +103,11 @@ export default class StateGraph {
     return this.__graph[state];
   }
 
-  /**
-   * Get the instruction and edge for a given state and symbol(s).
-   * @param {string} state
-   * @param {string|string[]} symbol - A single symbol or an array of symbols for multi-tape machines.
-   */
   getInstructionAndEdge(state, symbol) {
     const vertex = this.__graph[state];
     if (vertex === undefined) {
       throw new Error('not a valid state: ' + String(state));
     }
-
-    // CHANGE: If the symbol is an array (from a multi-tape machine), join it to create the key.
     const key = Array.isArray(symbol) ? symbol.join(',') : symbol;
     return vertex.transitions && vertex.transitions[key];
   }
