@@ -7,7 +7,7 @@ import { watchInit } from './watch.js';
 import * as d3 from 'd3';
 
 /**
- * Create an animated transition function.
+ * Create an animated transition function for a single-tape machine.
  * @param  {StateGraph} graph
  * @param  {LayoutEdge -> any} animationCallback
  * @return {(string, string) -> Instruction} Created transition function.
@@ -18,8 +18,24 @@ function animatedTransition(graph, animationCallback) {
     if (tuple == null) return null;
     animationCallback(tuple.edge);
     return tuple.instruction;
-  }
   };
+}
+
+/**
+ * CHANGE: Create an animated transition function for a multi-tape machine.
+ * @param  {StateGraph} graph
+ * @param  {LayoutEdge -> any} animationCallback
+ * @return {(string, string[]) -> Instruction} Created transition function.
+ */
+function animatedMultiTapeTransition(graph, animationCallback) {
+  return function (state, symbols) {
+    // StateGraph now handles the array of symbols
+    const tuple = graph.getInstructionAndEdge(state, symbols);
+    if (tuple == null) return null;
+    animationCallback(tuple.edge);
+    return tuple.instruction;
+  };
+}
 
 
 /**
@@ -38,7 +54,6 @@ function pulseEdge(edge) {
     .transition()
     .duration(0)
     .on('start', function () {
-      // eslint-disable-next-line no-invalid-this
       d3.select(this).classed('active-edge', false);
     })
     .style('stroke', null)
@@ -66,9 +81,6 @@ function addBlankTape(div, spec) {
 /**
  * Construct a new state and tape visualization inside a <div>.
  * @constructor
- * @param {HTMLDivElement} div        div to take over and use.
- * @param                  spec       machine specification
- * @param {PositionTable} [posTable]  position table for the state nodes
  */
 export default class TMViz {
   constructor(div, spec, posTable) {
@@ -79,68 +91,68 @@ export default class TMViz {
       graph.getVertexMap(),
       graph.getEdges()
     );
-  if (posTable !== undefined) {
-    this.positionTable = posTable;
-  }
-  this.edgeAnimation = pulseEdge;
-  this.stepInterval = 100;
+    if (posTable !== undefined) {
+      this.positionTable = posTable;
+    }
 
+    this.edgeAnimation = pulseEdge;
+    this.stepInterval = 100;
     this.__parentDiv = div;
     this.__spec = spec;
 
-    // We hook into the animation callback to know when to start the next step (when running).
     const animateAndContinue = edge => {
       const transition = this.edgeAnimation(edge);
       if (this.isRunning) {
         transition.transition().duration(this.stepInterval).on('end', () => {
-          // stop if machine was paused during the animation
           if (this.isRunning) this.step();
         });
       }
     };
-    if(spec.type === '1tape') {
+
+    // CHANGE: Updated the logic for 1-tape and 3-tape machine setup.
+    if (spec.type === '1-tape') {
       this.machine = new TuringMachine1Tape(
         animatedTransition(graph, animateAndContinue),
         spec.startState,
         addTape(div, spec)
       );
-    }
-    else if(spec.type === '3tape') {
-      this.machine = new TuringMachine3Tape(
-        spec.transition,
-        spec.startState,
+    } else if (spec.type === '3-tape') {
+      const tapes = [
         addTape(div, spec),
         addBlankTape(div, spec),
-        addBlankTape(div, spec)
+        addBlankTape(div, spec),
+      ];
+      this.machine = new TuringMachine3Tape(
+        animatedMultiTapeTransition(graph, animateAndContinue),
+        spec.startState,
+        tapes // Pass tapes as an array
       );
     }
 
-    // intercept and animate when the state is set
     watchInit(this.machine, 'state', (prop, oldstate, newstate) => {
-      d3.select(graph.getVertex(oldstate).domNode).classed('current-state', false);
-      d3.select(graph.getVertex(newstate).domNode).classed('current-state', true);
+      if (graph.getVertex(oldstate)) {
+        d3.select(graph.getVertex(oldstate).domNode).classed('current-state', false);
+      }
+      if (graph.getVertex(newstate)) {
+        d3.select(graph.getVertex(newstate).domNode).classed('current-state', true);
+      }
       return newstate;
     });
 
-    // Sidenote: each "Step" click evaluates the transition function once.
-    // Therefore, detecting halting always requires its own step (for consistency).
     this.isHalted = false;
-
+    let isRunning = false;
     Object.defineProperty(this, 'isRunning', {
       configurable: true,
-      get() { return this._isRunning || false; },
+      get() { return isRunning; },
       set(value) {
-        if ((this._isRunning || false) !== value) {
-          this._isRunning = value;
-          if (this._isRunning) this.step();
+        if (isRunning !== value) {
+          isRunning = value;
+          if (isRunning) this.step();
         }
-      }
+      },
     });
   }
 
-  /**
-   * Step the machine immediately and interrupt any animations.
-   */
   step() {
     if (!this.machine.step()) {
       this.isRunning = false;
@@ -149,25 +161,33 @@ export default class TMViz {
   }
 
   /**
-   * Reset the Turing machine to its starting configuration.
+   * CHANGE: Rewrote the reset method to handle both 1-tape and 3-tape machines.
    */
   reset() {
     this.isRunning = false;
     this.isHalted = false;
     this.machine.state = this.__spec.startState;
+
     if (this.__spec.type === '3-tape') {
-      // Remove all three tape SVGs and recreate them
-      this.machine.tape1.domNode.remove();
-      this.machine.tape2.domNode.remove();
-      this.machine.tape3.domNode.remove();
-      this.machine.tape1 = addTape(this.__parentDiv, this.__spec);
-      this.machine.tape2 = addBlankTape(this.__parentDiv, this.__spec);
-      this.machine.tape3 = addBlankTape(this.__parentDiv, this.__spec);
+      // Remove each tape's SVG node
+      this.machine.tapes.forEach(tape => tape.domNode.remove());
+      // Recreate the tapes and assign them back
+      this.machine.tapes = [
+        addTape(this.__parentDiv, this.__spec),
+        addBlankTape(this.__parentDiv, { blank: this.__spec.blank }),
+        addBlankTape(this.__parentDiv, { blank: this.__spec.blank }),
+      ];
     } else {
-      // 1-tape case (original logic)
+      // Original logic for 1-tape machine
       this.machine.tape.domNode.remove();
       this.machine.tape = addTape(this.__parentDiv, this.__spec);
-        }}
-      
     }
-  
+  }
+
+  get positionTable() {
+    return this.stateviz.positionTable;
+  }
+  set positionTable(posTable) {
+    this.stateviz.positionTable = posTable;
+  }
+}
