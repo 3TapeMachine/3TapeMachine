@@ -1,46 +1,50 @@
-# FIX: 'type' is now a top-level property, outside of the source code block.
-name: add binary (3 tape)
-type: 3tape
-
-# The 'source code' block now contains everything except the type.
+name: add binary
 source code: |
-  input: '1011+0101'
+  # Adds two binary numbers together, using three tapes
+  type: 3tape
+  input: '1011+0101' # try any numbers you like!
   blank: ' '
+  wild: '.'
+
+  # How it works:
+  # 1. Copy the first number to tape 2.
+  # 2. Copy the second number to tape 3.
+  # 3. Add the two numbers together, writing the result to tape 1.
 
   start state: CopyFirst
   table:
     CopyFirst:
-      '0, , ': { write: [' ', '0', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
-      '1, , ': { write: [' ', '1', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
-      '+, , ': { write: [' ', ' ', ' '], move: ['R', 'S', 'S'], next: CopySecond}
+      0..: {write: ' 0 ', move: RRS}
+      1..: {write: ' 1 ', move: RRS}
+      +..: {write: '   ', move: RSS, next: CopySecond}
 
     CopySecond:
-      '0, , ': { write: [' ', ' ', '0'], move: ['R', 'S', 'R'], next: CopySecond }
-      '1, , ': { write: [' ', ' ', '1'], move: ['R', 'S', 'R'], next: CopySecond }
-      ' , , ': { next: Add }
+      0..: {write: '  0', move: RSR}
+      1..: {write: '  1', move: RSR}
+      ' ..': Add
 
     Add:
-      ' ,0,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
-      ' ,0,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
-      ' ,1,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
-      ' ,1,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-      ' ,0, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
-      ' ,1, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
-      ' , ,0': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
-      ' , ,1': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
-      ' , , ': { next: accept }
+      ' 00': {write: '0  ', move: LLL}
+      ' 01': {write: '1  ', move: LLL}
+      ' 10': {write: '1  ', move: LLL}
+      ' 11': {write: '0  ', move: LLL, next: Carry}
+      ' 0 ': {write: '0  ', move: LLS}
+      ' 1 ': {write: '1  ', move: LLS}
+      '  0': {write: '0  ', move: LSL}
+      '  1': {write: '1  ', move: LSL}
+      '   ': accept
 
     Carry:
-      ' ,0,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add   }
-      ' ,0,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-      ' ,1,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-      ' ,1,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-      ' ,0, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add   }
-      ' ,1, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Carry }
-      ' , ,0': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add   }
-      ' , ,1': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Carry }
-      ' , , ': { write: ['1', ' ', ' '], move: ['S', 'S', 'S'], next: accept}
-
+      ' 00': {write: '1  ', move: LLL, next: Add}
+      ' 01': {write: '0  ', move: LLL}
+      ' 10': {write: '0  ', move: LLL}
+      ' 11': {write: '1  ', move: LLL}
+      ' 0 ': {write: '1  ', move: LLS, next: Add}
+      ' 1 ': {write: '0  ', move: LLS}
+      '  0': {write: '1  ', move: LSL, next: Add}
+      '  1': {write: '0  ', move: LSL}
+      '   ': {write: '1  ', next: accept}
+    
     accept:
 
 positions:
