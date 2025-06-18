@@ -1,16 +1,15 @@
+# FIX: 'type' is now a top-level property, outside of the source code block.
 name: add binary
-# FIX: The entire machine definition is now nested under "source code:"
+type: 3-tape
+
+# The 'source code' block now contains everything except the type.
 source code: |
-  # The pipe symbol (|) above is important!
-  # All lines below this are part of the source code.
-  type: 3-tape
   input: '1011+0101'
   blank: ' '
 
   start state: CopyFirst
   table:
     CopyFirst:
-      # Rule format is still the same: 'read1,read2,read3': { ... }
       '0, , ': { write: [' ', '0', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
       '1, , ': { write: [' ', '1', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
       '+, , ': { write: [' ', ' ', ' '], move: ['R', 'S', 'S'], next: CopySecond}
