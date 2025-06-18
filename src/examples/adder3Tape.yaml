@@ -1,50 +1,48 @@
-# FILE: /examples/adder3Tape.yaml (Corrected Version)
-
 name: add binary
-type: 3-tape          # This key tells the simulator to create 3 tapes
-input: '1011+0101'
-blank: ' '
+# FIX: The entire machine definition is now nested under "source code:"
+source code: |
+  # The pipe symbol (|) above is important!
+  # All lines below this are part of the source code.
+  type: 3-tape
+  input: '1011+0101'
+  blank: ' '
 
-start state: CopyFirst
-table:
-  CopyFirst:
-    # This state copies the first number to tape 2.
-    # Rule format: 'read1,read2,read3': { write: [w1,w2,w3], move: [m1,m2,m3] }
-    '0, , ': { write: [' ', '0', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
-    '1, , ': { write: [' ', '1', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
-    '+, , ': { write: [' ', ' ', ' '], move: ['R', 'S', 'S'], next: CopySecond}
+  start state: CopyFirst
+  table:
+    CopyFirst:
+      # Rule format is still the same: 'read1,read2,read3': { ... }
+      '0, , ': { write: [' ', '0', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
+      '1, , ': { write: [' ', '1', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
+      '+, , ': { write: [' ', ' ', ' '], move: ['R', 'S', 'S'], next: CopySecond}
 
-  CopySecond:
-    # This state copies the second number to tape 3.
-    '0, , ': { write: [' ', ' ', '0'], move: ['R', 'S', 'R'], next: CopySecond }
-    '1, , ': { write: [' ', ' ', '1'], move: ['R', 'S', 'R'], next: CopySecond }
-    ' , , ': { next: Add } 
+    CopySecond:
+      '0, , ': { write: [' ', ' ', '0'], move: ['R', 'S', 'R'], next: CopySecond }
+      '1, , ': { write: [' ', ' ', '1'], move: ['R', 'S', 'R'], next: CopySecond }
+      ' , , ': { next: Add }
 
-  Add:
-    # This state performs addition from right to left.
-    ' ,0,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
-    ' ,0,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
-    ' ,1,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
-    ' ,1,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-    ' ,0, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
-    ' ,1, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
-    ' , ,0': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
-    ' , ,1': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
-    ' , , ': { next: accept }
+    Add:
+      ' ,0,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
+      ' ,0,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
+      ' ,1,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
+      ' ,1,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+      ' ,0, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
+      ' ,1, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
+      ' , ,0': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
+      ' , ,1': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
+      ' , , ': { next: accept }
 
-  Carry:
-    # This state handles carrying the 1 during addition.
-    ' ,0,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add   }
-    ' ,0,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-    ' ,1,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-    ' ,1,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
-    ' ,0, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add   }
-    ' ,1, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Carry }
-    ' , ,0': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add   }
-    ' , ,1': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Carry }
-    ' , , ': { write: ['1', ' ', ' '], move: ['S', 'S', 'S'], next: accept}
+    Carry:
+      ' ,0,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add   }
+      ' ,0,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+      ' ,1,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+      ' ,1,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+      ' ,0, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add   }
+      ' ,1, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Carry }
+      ' , ,0': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add   }
+      ' , ,1': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Carry }
+      ' , , ': { write: ['1', ' ', ' '], move: ['S', 'S', 'S'], next: accept}
 
-  accept:
+    accept:
 
 positions:
   CopyFirst: {x: 230, y: 250}
