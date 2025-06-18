@@ -6,6 +6,7 @@ import StateViz from './state-diagram/StateViz.js';
 import { watchInit } from './watch.js';
 import * as d3 from 'd3';
 
+// ... (all the helper functions like animatedTransition, pulseEdge, etc. are the same)
 function animatedTransition(graph, animationCallback) {
   return function (state, symbol) {
     const tuple = graph.getInstructionAndEdge(state, symbol);
@@ -14,7 +15,6 @@ function animatedTransition(graph, animationCallback) {
     return tuple.instruction;
   };
 }
-
 function animatedMultiTapeTransition(graph, animationCallback) {
   return function (state, symbols) {
     const tuple = graph.getInstructionAndEdge(state, symbols);
@@ -23,7 +23,6 @@ function animatedMultiTapeTransition(graph, animationCallback) {
     return tuple.instruction;
   };
 }
-
 function pulseEdge(edge) {
   const edgepath = d3.select(edge.domNode);
   return edgepath
@@ -40,7 +39,6 @@ function pulseEdge(edge) {
     .style('stroke', null)
     .style('stroke-width', null);
 }
-
 function addTape(div, spec) {
   return new TapeViz(
     div.append('svg').attr('class', 'tm-tape'),
@@ -49,7 +47,6 @@ function addTape(div, spec) {
     spec.input ? String(spec.input).split('') : []
   );
 }
-
 function addBlankTape(div, spec) {
   return new TapeViz(
     div.append('svg').attr('class', 'tm-tape'),
@@ -85,20 +82,11 @@ export default class TMViz {
         });
       }
     };
-
-    // The temporary debugging code has been removed.
-
-    // Check for the machine type.
-    if (spec.type === '1-tape') {
-      this.machine = new TuringMachine1Tape(
-        animatedTransition(graph, animateAndContinue),
-        spec.startState,
-        addTape(div, spec)
-      );
+    
     // =================================================================
-    // =========== THE ONLY CHANGE IS ON THE LINE BELOW ================
+    // =========== FIX: Default to 1-tape if not 3-tape ================
     // =================================================================
-    } else if (spec.type === '3tape') { // FIX: Removed the hyphen to match the data
+    if (spec.type === '3tape') {
       const tapes = [
         addTape(div, spec),
         addBlankTape(div, spec),
@@ -107,7 +95,14 @@ export default class TMViz {
       this.machine = new TuringMachine3Tape(
         animatedMultiTapeTransition(graph, animateAndContinue),
         spec.startState,
-        tapes // Pass tapes as an array
+        tapes
+      );
+    } else {
+      // Default to a 1-tape machine for all other cases
+      this.machine = new TuringMachine1Tape(
+        animatedTransition(graph, animateAndContinue),
+        spec.startState,
+        addTape(div, spec)
       );
     }
 
@@ -147,8 +142,7 @@ export default class TMViz {
     this.isHalted = false;
     this.machine.state = this.__spec.startState;
 
-    // Use the spec from the instance, not the original __spec
-    if (this.machine.tapes) { // A safer check for multi-tape machines
+    if (this.machine.tapes) { 
       this.machine.tapes.forEach(tape => tape.domNode.remove());
       this.machine.tapes = [
         addTape(this.__parentDiv, this.__spec),
