@@ -1,4 +1,4 @@
-name: add binary
+name: add binary (3 tape)
 source code: |
   # Adds two binary numbers together, using three tapes
   type: 3tape
