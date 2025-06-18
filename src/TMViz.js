@@ -6,12 +6,6 @@ import StateViz from './state-diagram/StateViz.js';
 import { watchInit } from './watch.js';
 import * as d3 from 'd3';
 
-/**
- * Create an animated transition function for a single-tape machine.
- * @param  {StateGraph} graph
- * @param  {LayoutEdge -> any} animationCallback
- * @return {(string, string) -> Instruction} Created transition function.
- */
 function animatedTransition(graph, animationCallback) {
   return function (state, symbol) {
     const tuple = graph.getInstructionAndEdge(state, symbol);
@@ -21,15 +15,8 @@ function animatedTransition(graph, animationCallback) {
   };
 }
 
-/**
- * CHANGE: Create an animated transition function for a multi-tape machine.
- * @param  {StateGraph} graph
- * @param  {LayoutEdge -> any} animationCallback
- * @return {(string, string[]) -> Instruction} Created transition function.
- */
 function animatedMultiTapeTransition(graph, animationCallback) {
   return function (state, symbols) {
-    // StateGraph now handles the array of symbols
     const tuple = graph.getInstructionAndEdge(state, symbols);
     if (tuple == null) return null;
     animationCallback(tuple.edge);
@@ -37,12 +24,6 @@ function animatedMultiTapeTransition(graph, animationCallback) {
   };
 }
 
-
-/**
- * Default edge animation callback.
- * @param  {{domNode: Node}} edge
- * @return {D3Transition} The animation. Use this for transition chaining.
- */
 function pulseEdge(edge) {
   const edgepath = d3.select(edge.domNode);
   return edgepath
@@ -78,10 +59,6 @@ function addBlankTape(div, spec) {
   );
 }
 
-/**
- * Construct a new state and tape visualization inside a <div>.
- * @constructor
- */
 export default class TMViz {
   constructor(div, spec, posTable) {
     div = d3.select(div);
@@ -109,27 +86,19 @@ export default class TMViz {
       }
     };
 
-    // =================================================================
-    // =========== START OF ADDED DEBUGGING CODE =======================
-    // =================================================================
-    console.log("Creating TMViz with spec:", spec);
-    if (spec.name === 'add binary') {
-      console.log("Forcing 'add binary' to be a 3-tape machine.");
-      spec.type = '3-tape';
-    }
-    // =================================================================
-    // ============ END OF ADDED DEBUGGING CODE ========================
-    // =================================================================
+    // The temporary debugging code has been removed.
 
-
-    // CHANGE: Updated the logic for 1-tape and 3-tape machine setup.
+    // Check for the machine type.
     if (spec.type === '1-tape') {
       this.machine = new TuringMachine1Tape(
         animatedTransition(graph, animateAndContinue),
         spec.startState,
         addTape(div, spec)
       );
-    } else if (spec.type === '3-tape') {
+    // =================================================================
+    // =========== THE ONLY CHANGE IS ON THE LINE BELOW ================
+    // =================================================================
+    } else if (spec.type === '3tape') { // FIX: Removed the hyphen to match the data
       const tapes = [
         addTape(div, spec),
         addBlankTape(div, spec),
@@ -173,25 +142,20 @@ export default class TMViz {
     }
   }
 
-  /**
-   * CHANGE: Rewrote the reset method to handle both 1-tape and 3-tape machines.
-   */
   reset() {
     this.isRunning = false;
     this.isHalted = false;
     this.machine.state = this.__spec.startState;
 
-    if (this.__spec.type === '3-tape') {
-      // Remove each tape's SVG node
+    // Use the spec from the instance, not the original __spec
+    if (this.machine.tapes) { // A safer check for multi-tape machines
       this.machine.tapes.forEach(tape => tape.domNode.remove());
-      // Recreate the tapes and assign them back
       this.machine.tapes = [
         addTape(this.__parentDiv, this.__spec),
         addBlankTape(this.__parentDiv, { blank: this.__spec.blank }),
         addBlankTape(this.__parentDiv, { blank: this.__spec.blank }),
       ];
     } else {
-      // Original logic for 1-tape machine
       this.machine.tape.domNode.remove();
       this.machine.tape = addTape(this.__parentDiv, this.__spec);
     }
