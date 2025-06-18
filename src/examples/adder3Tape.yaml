@@ -1,54 +1,51 @@
+# FILE: /examples/adder3Tape.yaml (Corrected Version)
+
 name: add binary
-source code: |
-  # Adds two binary numbers togetyher, using three tapes
-  type: 3tape
-  input: '1011+0101' # try any numbers you like!
-  blank: ' '
-  wild: '.'
+type: 3-tape          # This key tells the simulator to create 3 tapes
+input: '1011+0101'
+blank: ' '
 
-  # How it works:
-  # 1. Copy the first number to tape 2.
-  # 2. Copy the second number to tape 3.
-  # 3. Add the two numbers together, writing the result to tape 1.
+start state: CopyFirst
+table:
+  CopyFirst:
+    # This state copies the first number to tape 2.
+    # Rule format: 'read1,read2,read3': { write: [w1,w2,w3], move: [m1,m2,m3] }
+    '0, , ': { write: [' ', '0', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
+    '1, , ': { write: [' ', '1', ' '], move: ['R', 'R', 'S'], next: CopyFirst }
+    '+, , ': { write: [' ', ' ', ' '], move: ['R', 'S', 'S'], next: CopySecond}
 
-  start state: CopyFirst
-  table:
-    CopyFirst:
-      0..: {write: ' 0 ', move: RRS}
-      1..: {write: ' 1 ', move: RRS}
-      +..: {write: '   ', move: RSS, next: CopySecond}
+  CopySecond:
+    # This state copies the second number to tape 3.
+    '0, , ': { write: [' ', ' ', '0'], move: ['R', 'S', 'R'], next: CopySecond }
+    '1, , ': { write: [' ', ' ', '1'], move: ['R', 'S', 'R'], next: CopySecond }
+    ' , , ': { next: Add } 
 
-    CopySecond:
-      0..: {write: '  0', move: RSR}
-      1..: {write: '  1', move: RSR}
-      ' ..': Add
+  Add:
+    # This state performs addition from right to left.
+    ' ,0,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
+    ' ,0,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
+    ' ,1,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add }
+    ' ,1,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+    ' ,0, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
+    ' ,1, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add }
+    ' , ,0': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
+    ' , ,1': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add }
+    ' , , ': { next: accept }
 
-    Add:
-      ' 00': {write: '0  ', move: LLL}
-      ' 01': {write: '1  ', move: LLL}
-      ' 10': {write: '1  ', move: LLL}
-      ' 11': {write: '0  ', move: LLL, next: Carry}
-      ' 0 ': {write: '0  ', move: LLS}
-      ' 1 ': {write: '1  ', move: LLS}
-      '  0': {write: '0  ', move: LSL}
-      '  1': {write: '1  ', move: LSL}
-      '   ': accept
+  Carry:
+    # This state handles carrying the 1 during addition.
+    ' ,0,0': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Add   }
+    ' ,0,1': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+    ' ,1,0': { write: ['0', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+    ' ,1,1': { write: ['1', ' ', ' '], move: ['L', 'L', 'L'], next: Carry }
+    ' ,0, ': { write: ['1', ' ', ' '], move: ['L', 'L', 'S'], next: Add   }
+    ' ,1, ': { write: ['0', ' ', ' '], move: ['L', 'L', 'S'], next: Carry }
+    ' , ,0': { write: ['1', ' ', ' '], move: ['L', 'S', 'L'], next: Add   }
+    ' , ,1': { write: ['0', ' ', ' '], move: ['L', 'S', 'L'], next: Carry }
+    ' , , ': { write: ['1', ' ', ' '], move: ['S', 'S', 'S'], next: accept}
 
-    Carry:
-      ' 00': {write: '1  ', move: LLL, next: Add}
-      ' 01': {write: '0  ', move: LLL}
-      ' 10': {write: '0  ', move: LLL}
-      ' 11': {write: '1  ', move: LLL}
-      ' 0 ': {write: '1  ', move: LLS, next: Add}
-      ' 1 ': {write: '0  ', move: LLS}
-      '  0': {write: '1  ', move: LSL, next: Add}
-      '  1': {write: '0  ', move: LSL}
-      '   ': {write: '1  ', next: accept}
-    
-    accept:
-  # Exercises:
+  accept:
 
-  
 positions:
   CopyFirst: {x: 230, y: 250}
   CopySecond: {x: 400, y: 250}
