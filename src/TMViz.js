@@ -109,6 +109,19 @@ export default class TMViz {
       }
     };
 
+    // =================================================================
+    // =========== START OF ADDED DEBUGGING CODE =======================
+    // =================================================================
+    console.log("Creating TMViz with spec:", spec);
+    if (spec.name === 'add binary') {
+      console.log("Forcing 'add binary' to be a 3-tape machine.");
+      spec.type = '3-tape';
+    }
+    // =================================================================
+    // ============ END OF ADDED DEBUGGING CODE ========================
+    // =================================================================
+
+
     // CHANGE: Updated the logic for 1-tape and 3-tape machine setup.
     if (spec.type === '1-tape') {
       this.machine = new TuringMachine1Tape(
