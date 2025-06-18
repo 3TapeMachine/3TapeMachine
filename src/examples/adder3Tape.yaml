@@ -1,6 +1,6 @@
 # FIX: 'type' is now a top-level property, outside of the source code block.
-name: add binary
-type: 3-tape
+name: add binary (3 tape)
+type: 3tape
 
 # The 'source code' block now contains everything except the type.
 source code: |
