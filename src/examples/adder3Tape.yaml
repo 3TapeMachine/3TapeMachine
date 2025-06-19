@@ -1,4 +1,8 @@
-name: add binary
+name: add binary (3 tape)
+description: |
+  This example demonstrates a Turing machine that adds two binary numbers together using three tapes.
+  The first tape is used for the result, the second tape holds the first number, and the third tape holds the second number.
+  The machine reads from the first two tapes, performs the addition, and writes the result back to the first tape.
 source code: |
   # Adds two binary numbers together, using three tapes
   type: 3tape
