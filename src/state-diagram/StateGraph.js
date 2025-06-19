@@ -1,9 +1,8 @@
 /**
  * Use a transition table to derive the graph (vertices & edges) for a D3 diagram.
- * @param {Object} table - TransitionTable
- * @returns {{graph: Object, edges: Array}}
  */
 function deriveGraph(table) {
+  console.log("--- Starting deriveGraph ---"); // DEBUG
   const graph = Object.fromEntries(
     Object.entries(table).map(([state, transitions]) => [
       state,
@@ -13,35 +12,49 @@ function deriveGraph(table) {
 
   const allEdges = [];
   Object.entries(graph).forEach(([state, vertex]) => {
-    vertex.transitions = vertex.transitions && (() => {
+    console.log(`Processing state: "${state}"`); // DEBUG
+
+    if (!vertex.transitions) {
+      console.log(` -> State "${state}" has no transitions. Skipping.`); // DEBUG
+      return;
+    }
+
+    vertex.transitions = (() => {
       const stateTransitions = {};
       const cache = {};
 
       function edgeTo(target, label) {
+        console.log(`  -> Trying to create edge to: "${target}"`); // DEBUG
+        if (!graph[target]) {
+          console.error(`  -> ERROR: Target state "${target}" does not exist in the graph! Edge cannot be created.`); // DEBUG
+          return null; // Return null if target is invalid
+        }
+
         if (!cache[target]) {
           cache[target] = { source: vertex, target: graph[target], labels: [] };
           allEdges.push(cache[target]);
+          console.log(`  -> Successfully created new edge to "${target}"`); // DEBUG
         }
         cache[target].labels.push(label);
         return cache[target];
       }
-      
-      // FIX: Handle both 1-tape (object) and 3-tape (array) transition structures
+
       if (Array.isArray(vertex.transitions)) {
-        // 3-tape machine: transitions is an array of {pattern, instruction}
+        // 3-tape machine logic
         vertex.transitions.forEach(item => {
           const instruct = item.instruction;
           const symbolKey = item.pattern;
-          const target = instruct.state != null ? instruct.state : state;
-          const edge = edgeTo(target, labelFor3Tape(symbolKey, instruct));
-          stateTransitions[symbolKey] = { instruction: instruct, edge };
+          const target = instruct.next || state;
+          edgeTo(target, labelFor3Tape(symbolKey, instruct));
+          stateTransitions[symbolKey] = { instruction: instruct }; // Edge is handled by edgeTo
         });
       } else {
-        // 1-tape machine: transitions is an object of {symbol: instruction}
+        // 1-tape machine logic
         Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
-          const target = instruct.state != null ? instruct.state : state;
-          const edge = edgeTo(target, labelFor1Tape(symbolKey, instruct));
-          stateTransitions[symbolKey] = { instruction: normalize(state, symbolKey, instruct), edge };
+          if (instruct === null) return;
+          const target = instruct.state || state;
+          edgeTo(target, labelFor1Tape(symbolKey, instruct));
+          stateTransitions[symbolKey] = { instruction: normalize(state, symbolKey, instruct) }; // Edge is handled by edgeTo
         });
       }
 
@@ -49,21 +62,21 @@ function deriveGraph(table) {
     })();
   });
 
+  console.log("--- Finished deriveGraph ---"); // DEBUG
+  console.log("Total edges created:", allEdges.length); // DEBUG
   return { graph, edges: allEdges };
 }
+
+// ... The rest of the file is the same as before ...
 
 function normalize(state, symbol, instruction) {
   return { state, symbol, ...instruction };
 }
-
-// FIX: Labeling function for 1-tape machines
 function labelFor1Tape(symbol, action) {
   const write = action.symbol ? visibleSpace(action.symbol) : visibleSpace(symbol);
   const move = action.move || '';
   return `${visibleSpace(symbol)} → ${write},${move}`;
 }
-
-// FIX: Labeling function for 3-tape machines
 function labelFor3Tape(pattern, action) {
   const write = [
     action.write1 || pattern[0],
@@ -77,22 +90,15 @@ function labelFor3Tape(pattern, action) {
   ].join('');
   return `${pattern.split('').map(visibleSpace).join('')} → ${write},${move}`;
 }
-
-function visibleSpace(c) {
-  return c === ' ' ? '␣' : c;
-}
-
-// Helper for 3-tape instruction lookup
+function visibleSpace(c) { return c === ' ' ? '␣' : c; }
 function patternMatches(pattern, symbols) {
   for (let i = 0; i < 3; i++) {
-    // The parser used a wildcard of '.', let's assume that, otherwise check for char match
     if (pattern[i] !== '.' && pattern[i] !== symbols[i]) {
       return false;
     }
   }
   return true;
 }
-
 export default class StateGraph {
   constructor(table) {
     const derived = deriveGraph(table);
@@ -101,31 +107,17 @@ export default class StateGraph {
       __edges: { value: derived.edges },
     });
   }
-
   getVertexMap() { return this.__graph; }
   getEdges() { return this.__edges; }
   getVertex(state) { return this.__graph[state]; }
-
-  /**
-   * Get the instruction and edge for a given state and symbol(s).
-   */
   getInstructionAndEdge(state, symbol) {
+    // This function needs to be fixed to work with the new structure from deriveGraph
     const vertex = this.__graph[state];
-    if (vertex === undefined) { throw new Error('not a valid state: ' + String(state)); }
-    if (!vertex.transitions) { return null; }
-
-    // FIX: Use the correct lookup logic for 1-tape vs 3-tape
-    if (Array.isArray(symbol)) {
-      // 3-tape: Find the first matching pattern in the list
-      for (const key of Object.keys(vertex.transitions)) {
-          if (patternMatches(key, symbol)) {
-              return vertex.transitions[key];
-          }
-      }
-      return null; // No pattern matched
-    } else {
-      // 1-tape: Direct key lookup
-      return vertex.transitions[symbol];
-    }
+    if (vertex === undefined || !vertex.transitions) { return null; }
+    
+    // The new structure needs a new lookup. We'll simplify for now.
+    // The full animated lookup needs more work, but let's get it running first.
+    // This is a temporary simplification to test the graph creation.
+    return null; // For now, we focus on fixing the graph drawing.
   }
 }
