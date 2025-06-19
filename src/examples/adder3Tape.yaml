@@ -1,8 +1,8 @@
-name: add binary (3 tape)
+name: add binary
 source code: |
   # Adds two binary numbers together, using three tapes
   type: 3tape
-  input: '1011+0101' # try any numbers you like!
+  input: '1011+1001' # try any numbers you like!
   blank: ' '
   wild: '.'
 
@@ -21,7 +21,8 @@ source code: |
     CopySecond:
       0..: {write: '  0', move: RSR}
       1..: {write: '  1', move: RSR}
-      ' ..': Add
+      # FIX: Reposition heads on Tape 2 and 3 before starting the Add state.
+      ' ..': {move: SLL, next: Add}
 
     Add:
       ' 00': {write: '0  ', move: LLL}
@@ -46,7 +47,7 @@ source code: |
       '   ': {write: '1  ', next: accept}
     
     accept:
-
+  
 positions:
   CopyFirst: {x: 230, y: 250}
   CopySecond: {x: 400, y: 250}
