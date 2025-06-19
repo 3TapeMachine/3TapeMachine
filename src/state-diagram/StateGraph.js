@@ -1,8 +1,4 @@
-/**
- * Use a transition table to derive the graph (vertices & edges) for a D3 diagram.
- */
 function deriveGraph(table) {
-  console.log("--- Starting deriveGraph ---"); // DEBUG
   const graph = Object.fromEntries(
     Object.entries(table).map(([state, transitions]) => [
       state,
@@ -12,71 +8,59 @@ function deriveGraph(table) {
 
   const allEdges = [];
   Object.entries(graph).forEach(([state, vertex]) => {
-    console.log(`Processing state: "${state}"`); // DEBUG
+    if (!vertex.transitions) { return; } 
 
-    if (!vertex.transitions) {
-      console.log(` -> State "${state}" has no transitions. Skipping.`); // DEBUG
-      return;
+    const stateTransitions = {};
+    const cache = {};
+
+    function edgeTo(target, label) {
+      if (!graph[target]) {
+        // This prevents a crash if a state name is invalid.
+        console.error(`Attempted to create an edge to a non-existent state: "${target}"`);
+        return null;
+      }
+      if (!cache[target]) {
+        cache[target] = { source: vertex, target: graph[target], labels: [] };
+        allEdges.push(cache[target]);
+      }
+      cache[target].labels.push(label);
+      return cache[target];
     }
 
-    vertex.transitions = (() => {
-      const stateTransitions = {};
-      const cache = {};
-
-      function edgeTo(target, label) {
-        console.log(`  -> Trying to create edge to: "${target}"`); // DEBUG
-        if (!graph[target]) {
-          console.error(`  -> ERROR: Target state "${target}" does not exist in the graph! Edge cannot be created.`); // DEBUG
-          return null; // Return null if target is invalid
-        }
-
-        if (!cache[target]) {
-          cache[target] = { source: vertex, target: graph[target], labels: [] };
-          allEdges.push(cache[target]);
-          console.log(`  -> Successfully created new edge to "${target}"`); // DEBUG
-        }
-        cache[target].labels.push(label);
-        return cache[target];
-      }
-
-      if (Array.isArray(vertex.transitions)) {
-        // 3-tape machine logic
-        vertex.transitions.forEach(item => {
-          const instruct = item.instruction;
-          const symbolKey = item.pattern;
-          const target = instruct.next || state;
-          edgeTo(target, labelFor3Tape(symbolKey, instruct));
-          stateTransitions[symbolKey] = { instruction: instruct }; // Edge is handled by edgeTo
-        });
-      } else {
-        // 1-tape machine logic
-        Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
-          if (instruct === null) return;
-          const target = instruct.state || state;
-          edgeTo(target, labelFor1Tape(symbolKey, instruct));
-          stateTransitions[symbolKey] = { instruction: normalize(state, symbolKey, instruct) }; // Edge is handled by edgeTo
-        });
-      }
-
-      return stateTransitions;
-    })();
+    if (Array.isArray(vertex.transitions)) {
+      // 3-tape machine: transitions is an ARRAY of {pattern, instruction} objects
+      vertex.transitions.forEach(item => {
+        const instruct = item.instruction;
+        const pattern = item.pattern;
+        const target = instruct.next || state;
+        const edge = edgeTo(target, labelFor3Tape(pattern, instruct));
+        stateTransitions[pattern] = { instruction: instruct, edge };
+      });
+    } else {
+      // 1-tape machine: transitions is an OBJECT of {symbol: instruction}
+      Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
+        if (instruct === null) return;
+        const target = instruct.state || state;
+        const edge = edgeTo(target, labelFor1Tape(symbolKey, instruct));
+        stateTransitions[symbolKey] = { instruction: normalize(state, symbolKey, instruct), edge };
+      });
+    }
+    vertex.transitions = stateTransitions;
   });
 
-  console.log("--- Finished deriveGraph ---"); // DEBUG
-  console.log("Total edges created:", allEdges.length); // DEBUG
   return { graph, edges: allEdges };
 }
-
-// ... The rest of the file is the same as before ...
 
 function normalize(state, symbol, instruction) {
   return { state, symbol, ...instruction };
 }
+
 function labelFor1Tape(symbol, action) {
   const write = action.symbol ? visibleSpace(action.symbol) : visibleSpace(symbol);
   const move = action.move || '';
   return `${visibleSpace(symbol)} → ${write},${move}`;
 }
+
 function labelFor3Tape(pattern, action) {
   const write = [
     action.write1 || pattern[0],
@@ -90,7 +74,9 @@ function labelFor3Tape(pattern, action) {
   ].join('');
   return `${pattern.split('').map(visibleSpace).join('')} → ${write},${move}`;
 }
+
 function visibleSpace(c) { return c === ' ' ? '␣' : c; }
+
 function patternMatches(pattern, symbols) {
   for (let i = 0; i < 3; i++) {
     if (pattern[i] !== '.' && pattern[i] !== symbols[i]) {
@@ -99,6 +85,7 @@ function patternMatches(pattern, symbols) {
   }
   return true;
 }
+
 export default class StateGraph {
   constructor(table) {
     const derived = deriveGraph(table);
@@ -107,17 +94,26 @@ export default class StateGraph {
       __edges: { value: derived.edges },
     });
   }
+
   getVertexMap() { return this.__graph; }
   getEdges() { return this.__edges; }
   getVertex(state) { return this.__graph[state]; }
+
   getInstructionAndEdge(state, symbol) {
-    // This function needs to be fixed to work with the new structure from deriveGraph
     const vertex = this.__graph[state];
     if (vertex === undefined || !vertex.transitions) { return null; }
     
-    // The new structure needs a new lookup. We'll simplify for now.
-    // The full animated lookup needs more work, but let's get it running first.
-    // This is a temporary simplification to test the graph creation.
-    return null; // For now, we focus on fixing the graph drawing.
+    if (Array.isArray(symbol)) {
+      // 3-tape: Find the first matching pattern in the transition object.
+      for (const patternKey in vertex.transitions) {
+        if (patternMatches(patternKey, symbol)) {
+          return vertex.transitions[patternKey];
+        }
+      }
+      return null;
+    } else {
+      // 1-tape: Direct key lookup
+      return vertex.transitions[symbol];
+    }
   }
 }
