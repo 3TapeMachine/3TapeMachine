@@ -34,6 +34,7 @@ function pulseEdge(edge) {
     .transition()
     .duration(0)
     .on('start', function () {
+      // eslint-disable-next-line no-invalid-this
       d3.select(this).classed('active-edge', false);
     })
     .style('stroke', null)

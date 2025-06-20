@@ -24,9 +24,9 @@ export class TuringMachine3Tape {
     if (instruct.move2) { move(this.tapes[1], instruct.move2); }
     if (instruct.move3) { move(this.tapes[2], instruct.move3); }
 
-    // The parser uses 'next' for the next state in 3-tape instructions
-    if (instruct.next) {
-      this.state = instruct.next;
+    // Update state if needed
+    if (instruct.state) {
+      this.state = instruct.state; 
     }
 
     return true;
