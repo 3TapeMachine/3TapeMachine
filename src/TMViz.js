@@ -6,7 +6,7 @@ import StateViz from './state-diagram/StateViz.js';
 import { watchInit } from './watch.js';
 import * as d3 from 'd3';
 
-// ... (all the helper functions like animatedTransition, pulseEdge, etc. are the same)
+// ... (all helper functions are unchanged)
 function animatedTransition(graph, animationCallback) {
   return function (state, symbol) {
     const tuple = graph.getInstructionAndEdge(state, symbol);
@@ -34,6 +34,7 @@ function pulseEdge(edge) {
     .transition()
     .duration(0)
     .on('start', function () {
+      // eslint-disable-next-line no-invalid-this
       d3.select(this).classed('active-edge', false);
     })
     .style('stroke', null)
@@ -83,9 +84,8 @@ export default class TMViz {
       }
     };
     
-    // =================================================================
-    // =========== FIX: Default to 1-tape if not 3-tape ================
-    // =================================================================
+    // FIX: Check for '3tape' specifically and default everything else to 1-tape.
+    // This makes the existing examples work again.
     if (spec.type === '3tape') {
       const tapes = [
         addTape(div, spec),
