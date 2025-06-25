@@ -1,16 +1,10 @@
 import TMViz from './TMViz.js';
 import { formatError } from './sharing/format.js';
 
-/**
- * A wrapper for TMViz that uses a declarative-style interface.
- */
 export default class TMSimulator {
-  /**
-   * @param {Node} container - The DOM element to put the visualization in.
-   */
   constructor(container) {
     this.container = container;
-    this.viz = null; // The TMViz instance.
+    this.viz = null;
     this.error = null;
     this.onError = null;
   }
@@ -18,12 +12,10 @@ export default class TMSimulator {
   get sourceCode() {
     return this.viz ? this.viz.sourceCode : null;
   }
-  set sourceCode(str) {
-    if (this.viz && this.viz.sourceCode === str) { return; }
 
-    // =================================================================
-    // =========== FIX: ADDED A SAFETY CHECK BEFORE .stop() ============
-    // =================================================================
+  set sourceCode(spec) { // Changed 'str' to 'spec' for clarity
+    if (this.viz && this.viz.__spec === spec) { return; }
+
     if (this.viz) {
       this.viz.stop();
     }
@@ -31,9 +23,10 @@ export default class TMSimulator {
     this.container.style.display = 'none';
     this.error = null;
 
-    if (str != null) {
+    if (spec != null) {
       try {
-        this.viz = new TMViz(this.container, str);
+        // We now pass the full spec object directly
+        this.viz = new TMViz(this.container, spec);
         this.container.style.display = null;
       } catch (e) {
         this.viz = null;
@@ -43,20 +36,14 @@ export default class TMSimulator {
     if (this.onError) { this.onError(this.error); }
   }
 
-  /**
-   * Erase the contents of the simulator.
-   */
   clear() {
     this.sourceCode = null;
   }
 
-  /**
-   * A table of positions of the states in the diagram.
-   * @type {LayoutPositions}
-   */
   get positionTable() {
     return this.viz ? this.viz.positionTable : null;
   }
+
   set positionTable(val) {
     if (this.viz) {
       this.viz.positionTable = val;

@@ -6,7 +6,6 @@ import StateViz from './state-diagram/StateViz.js';
 import { watchInit } from './watch.js';
 import * as d3 from 'd3';
 
-// ... (all the helper functions are the same)
 function animatedTransition(graph, animationCallback) {
   return function (state, symbol) {
     const tuple = graph.getInstructionAndEdge(state, symbol);
@@ -126,9 +125,6 @@ export default class TMViz {
     });
   }
 
-  // =================================================================
-  // =========== NEW METHOD ADDED TO PREVENT CRASH =====================
-  // =================================================================
   stop() {
     this.isRunning = false;
   }
@@ -161,6 +157,7 @@ export default class TMViz {
   get positionTable() {
     return this.stateviz.positionTable;
   }
+
   set positionTable(posTable) {
     this.stateviz.positionTable = posTable;
   }

@@ -1,8 +1,6 @@
 import { TMSpecError, YAMLException, parseSpec } from '../parser.js';
 import { stringify } from './stringify.js';
-
-// The parser can throw these two errors.
-export { TMSpecError, YAMLException };
+import jsyaml from 'js-yaml'; // FIX: Use the correct ES6 import syntax
 
 /**
  * Thrown by parseDocument when a string can't be parsed.
@@ -16,33 +14,19 @@ export class InvalidDocumentError extends Error {
   }
 }
 
-// =================================================================
-// =========== START OF ADDED FUNCTION TO FIX ERROR ================
-// =================================================================
-
 /**
  * Convert an error to a user-friendly HTML string.
- * @param {Error} e
- * @returns {string}
  */
 export function formatError(e) {
   if (e instanceof TMSpecError || e instanceof YAMLException) {
     return e.message;
   }
-  // For any other unexpected errors, log the full error to the console for debugging
-  console.error(e);
+  console.error(e); // Log unexpected errors for debugging
   return '<strong>Unexpected error:</strong> ' + e;
 }
 
-// =================================================================
-// ============ END OF ADDED FUNCTION ==============================
-// =================================================================
-
 /**
  * Parse a YAML document containing a machine specification.
- * The YAML is expected to have a `source code:` key containing the spec.
- * @param {string} str - The YAML document string.
- * @returns {object} The parsed document object.
  */
 export function parseDocument(str) {
   const doc = jsyaml.load(str);
@@ -66,13 +50,12 @@ export function parseDocument(str) {
 
 /**
  * Convert a document object back into a YAML string.
- * @param {object} doc - The document object.
- * @returns {string} The YAML string representation.
  */
 export function stringifyDocument(doc) {
   const spec = {};
+  const topLevelKeys = new Set(['name', 'source code', 'id', 'doc_id', 'title']);
   for (const key in doc) {
-    if (Object.prototype.hasOwnProperty.call(doc, key) && key !== 'name' && key !== 'source code' && key !== 'id') {
+    if (Object.prototype.hasOwnProperty.call(doc, key) && !topLevelKeys.has(key)) {
       spec[key] = doc[key];
     }
   }
@@ -83,5 +66,4 @@ export function stringifyDocument(doc) {
   return jsyaml.dump(newDoc, { skipInvalid: true });
 }
 
-// Re-exporting js-yaml for convenience if needed elsewhere
-export const jsyaml = require('js-yaml');
+export { YAMLException };

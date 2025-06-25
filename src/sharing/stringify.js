@@ -5,8 +5,7 @@ function isPlainObject(x) {
 }
 
 function needsQuotes(str) {
-  // from http://www.yaml.org/spec/1.2/spec.html#id2771112
-  // This is not a full list. We quote anything that isn't a plain scalar.
+  if (typeof str !== 'string') return false;
   return /[:{}\[\]#&*!|>'"]/.test(str)
     || /^[ \t\n\r]/.test(str)
     || /[ \t\n\r]$/.test(str)
@@ -14,8 +13,6 @@ function needsQuotes(str) {
 }
 
 function quote(str) {
-  // This is not a full-featured quoting function.
-  // It only handles single-line strings.
   if (needsQuotes(str)) {
     return JSON.stringify(str);
   }
@@ -26,6 +23,8 @@ function stringify(obj, depth = 0) {
   const indent = INDENT.repeat(depth);
   const lines = [];
 
+  if (!obj) return '';
+
   for (const [key, value] of Object.entries(obj)) {
     let line = indent + quote(key) + ':';
     if (isPlainObject(value)) {
@@ -33,6 +32,8 @@ function stringify(obj, depth = 0) {
       if (nested) {
         lines.push(line);
         lines.push(nested);
+      } else {
+        lines.push(line + ' {}'); // Handle empty objects
       }
     } else {
       line += ' ' + String(value);
