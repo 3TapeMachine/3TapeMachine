@@ -1,3 +1,8 @@
+/**
+ * Use a transition table to derive the graph (vertices & edges) for a D3 diagram.
+ * @param {Object} table - TransitionTable
+ * @returns {{graph: Object, edges: Array}}
+ */
 function deriveGraph(table) {
   const graph = Object.fromEntries(
     Object.entries(table).map(([state, transitions]) => [
@@ -8,54 +13,57 @@ function deriveGraph(table) {
 
   const allEdges = [];
   Object.entries(graph).forEach(([state, vertex]) => {
-    if (!vertex.transitions) { return; } 
+    vertex.transitions = vertex.transitions && (() => {
+      const stateTransitions = {};
+      const cache = {};
 
-    const stateTransitions = {};
-    const cache = {};
-
-    function edgeTo(target, label) {
-      if (!graph[target]) {
-        console.error(`Attempted to create an edge to a non-existent state: "${target}"`);
-        return null;
+      function edgeTo(target, label) {
+        if (!cache[target]) {
+          cache[target] = { source: vertex, target: graph[target], labels: [] };
+          allEdges.push(cache[target]);
+        }
+        cache[target].labels.push(label);
+        return cache[target];
       }
-      if (!cache[target]) {
-        cache[target] = { source: vertex, target: graph[target], labels: [] };
-        allEdges.push(cache[target]);
+      
+      // FIX: Handle both 1-tape (object) and 3-tape (array) transition structures
+      if (Array.isArray(vertex.transitions)) {
+        // 3-tape machine: transitions is an array of {pattern, instruction}
+        vertex.transitions.forEach(item => {
+          const instruct = item.instruction;
+          const symbolKey = item.pattern;
+          const target = instruct.state != null ? instruct.state : state;
+          const edge = edgeTo(target, labelFor3Tape(symbolKey, instruct));
+          stateTransitions[symbolKey] = { instruction: instruct, edge };
+        });
+      } else {
+        // 1-tape machine: transitions is an object of {symbol: instruction}
+        Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
+          const target = instruct.state != null ? instruct.state : state;
+          const edge = edgeTo(target, labelFor1Tape(symbolKey, instruct));
+          stateTransitions[symbolKey] = { instruction: normalize(state, symbolKey, instruct), edge };
+        });
       }
-      cache[target].labels.push(label);
-      return cache[target];
-    }
 
-    if (Array.isArray(vertex.transitions)) {
-      // 3-tape machine: transitions is an ARRAY of {pattern, instruction} objects
-      vertex.transitions.forEach(item => {
-        const instruct = item.instruction;
-        const pattern = item.pattern;
-        const target = instruct.next || state;
-        const edge = edgeTo(target, labelFor3Tape(pattern, instruct));
-        if (edge) stateTransitions[pattern] = { instruction: instruct, edge };
-      });
-    } else {
-      // 1-tape machine: transitions is an OBJECT of {symbol: instruction}
-      Object.entries(vertex.transitions).forEach(([symbolKey, instruct]) => {
-        if (instruct === null) return;
-        const target = instruct.state || state;
-        const edge = edgeTo(target, labelFor1Tape(symbolKey, instruct));
-        if (edge) stateTransitions[symbolKey] = { instruction: instruct, edge };
-      });
-    }
-    vertex.transitions = stateTransitions;
+      return stateTransitions;
+    })();
   });
 
   return { graph, edges: allEdges };
 }
 
+function normalize(state, symbol, instruction) {
+  return { state, symbol, ...instruction };
+}
+
+// FIX: Labeling function for 1-tape machines
 function labelFor1Tape(symbol, action) {
   const write = action.symbol ? visibleSpace(action.symbol) : visibleSpace(symbol);
   const move = action.move || '';
   return `${visibleSpace(symbol)} → ${write},${move}`;
 }
 
+// FIX: Labeling function for 3-tape machines
 function labelFor3Tape(pattern, action) {
   const write = [
     action.write1 || pattern[0],
@@ -70,10 +78,14 @@ function labelFor3Tape(pattern, action) {
   return `${pattern.split('').map(visibleSpace).join('')} → ${write},${move}`;
 }
 
-function visibleSpace(c) { return c === ' ' ? '␣' : c; }
+function visibleSpace(c) {
+  return c === ' ' ? '␣' : c;
+}
 
+// Helper for 3-tape instruction lookup
 function patternMatches(pattern, symbols) {
   for (let i = 0; i < 3; i++) {
+    // The parser used a wildcard of '.', let's assume that, otherwise check for char match
     if (pattern[i] !== '.' && pattern[i] !== symbols[i]) {
       return false;
     }
@@ -94,18 +106,25 @@ export default class StateGraph {
   getEdges() { return this.__edges; }
   getVertex(state) { return this.__graph[state]; }
 
+  /**
+   * Get the instruction and edge for a given state and symbol(s).
+   */
   getInstructionAndEdge(state, symbol) {
     const vertex = this.__graph[state];
-    if (vertex === undefined || !vertex.transitions) { return null; }
-    
+    if (vertex === undefined) { throw new Error('not a valid state: ' + String(state)); }
+    if (!vertex.transitions) { return null; }
+
+    // FIX: Use the correct lookup logic for 1-tape vs 3-tape
     if (Array.isArray(symbol)) {
-      for (const patternKey in vertex.transitions) {
-        if (patternMatches(patternKey, symbol)) {
-          return vertex.transitions[patternKey];
-        }
+      // 3-tape: Find the first matching pattern in the list
+      for (const key of Object.keys(vertex.transitions)) {
+          if (patternMatches(key, symbol)) {
+              return vertex.transitions[key];
+          }
       }
-      return null;
+      return null; // No pattern matched
     } else {
+      // 1-tape: Direct key lookup
       return vertex.transitions[symbol];
     }
   }
