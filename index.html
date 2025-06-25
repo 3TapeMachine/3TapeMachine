@@ -125,6 +125,35 @@
     .no-copycommand [data-clipboard-target] { display: none }
     .icon-help-block > * { display: table-cell }
     .icon-help-block > .bi:first-child { padding-right: 0.5em }
+
+    /* === STYLES FOR STATE DIAGRAM VISUALIZATION (Added) === */
+    .nodes g {
+      cursor: move; /* Change cursor to indicate states are draggable */
+    }
+    .tm-state {
+      fill: #fff;
+      stroke: #333;
+      stroke-width: 2px;
+    }
+    .tm-state.current-state {
+      fill: #f8e71c; /* Highlight color for the current state */
+    }
+    .tm-edge {
+      stroke: #999;
+      stroke-opacity: 0.8;
+      fill: none;
+    }
+    .tm-edge.active-edge {
+      stroke: #f5a623;
+      stroke-opacity: 1;
+    }
+    .link-labels {
+      text-anchor: middle;
+      font-size: 10px;
+      fill: #555;
+    }
+    /* === END OF ADDED STYLES === */
+
   </style>
 </head>
 <body>
@@ -613,67 +642,3 @@ table:
       </section>
       <div class="col-md-4 col-sm-12">
         <h3>Tips</h3>
-        <div class="row">
-          <div class="col-sm-6 col-md-12">
-            <h4>Editor keyboard shortcuts</h4>
-            <table id="kbdShortcutTable" class="editor-shortcuts table">
-            </table>
-            <noscript>
-              <p>The code editor and keyboard shortcuts require that JavaScript be enabled.</p>
-            </noscript>
-            <p>More keyboard shortcuts are available on the <a href="https://github.com/ajaxorg/ace/wiki/Default-Keyboard-Shortcuts" target="_blank">full list</a>.</p>
-          </div>
-          <div class="col-sm-6 col-md-12">
-            <h4>Misc. tips</h4>
-            <ul id="misc-tips-list">
-              <li>Drag or click a state node to fix it in place; double-click to release it.</li>
-              <li>Don’t hesitate to duplicate.
-                Use <i>Edit</i> &gt; <i>Duplicate document</i> to create a snapshot of your current document whenever you’re about to make a larger edit.</li>
-              <li>Changes are autosaved to your browser’s local storage.
-                They will stay there between sessions, but be careful when clearing browser data. You can create backups by downloading your documents.</li>
-              <li>Incognito / Private Browse mode uses a separate temporary storage. This is useful for importing or editing documents that you want to try but don’t want to keep.</li>
-            </ul>
-            <a class="disclosure-triangle collapsed" role="button" data-bs-toggle="collapse" href="#aboutSyntax">
-              More about the syntax
-            </a>
-            <div id="aboutSyntax" class="collapse">
-              <p>The code is written in <a href="https://en.wikipedia.org/wiki/YAML" target="_blank"><abbr>YAML</abbr></a> 1.2, a general-purpose data format.</p>
-              <p>
-                If you’re familiar with JSON, YAML is similar, but designed to be more readable.
-                Mappings can use indent instead of brackets <code>{}</code>, and strings can often be included directly without quotes.
-              </p>
-              <p>
-                Some strings need to be quoted: for example, those that start/end with a space, or include certain characters that have special meaning in YAML.
-                If a string is causing problems, try putting quotes around it.
-               </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <footer class="page-footer">
-    <a href="https://github.com/3TapeMachine/3TapeMachine" target="_blank" title="View on GitHub">
-      <svg class="octicon octicon-mark-github" height="24" width="24" viewBox="0 0 16 16" version="1.1" aria-hidden="true">
-        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59 0.4 0.07 0.55-0.17 0.55-0.38 0-0.19-0.01-0.82-0.01-1.49-2.01 0.37-2.53-0.49-2.69-0.94-0.09-0.23-0.48-0.94-0.82-1.13-0.28-0.15-0.68-0.52-0.01-0.53 0.63-0.01 1.08 0.58 1.23 0.82 0.72 1.21 1.87 0.87 2.33 0.66 0.07-0.52 0.28-0.87 0.51-1.07-1.78-0.2-3.64-0.89-3.64-3.95 0-0.87 0.31-1.59 0.82-2.15-0.08-0.2-0.36-1.02 0.08-2.12 0 0 0.67-0.21 2.2 0.82 0.64-0.18 1.32-0.27 2-0.27 0.68 0 1.36 0.09 2 0.27 1.53-1.04 2.2-0.82 2.2-0.82 0.44 1.1 0.16 1.92 0.08 2.12 0.51 0.56 0.82 1.27 0.82 2.15 0 3.07-1.87 3.75-3.65 3.95 0.29 0.25 0.54 0.73 0.54 1.48 0 1.07-0.01 1.93-0.01 2.2 0 0.21 0.15 0.46 0.55 0.38C13.71 14.53 16 11.53 16 8 16 3.58 12.42 0 8 0z" />
-      </svg>
-    </a>
-  </footer>
-
-  <div id="importDialog" class="modal fade" tabindex="-1" aria-labelledby="importDialogHeader" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          <h5 class="modal-title" id="importDialogHeader">Import</h5>
-        </div>
-        <div class="modal-body"></div>
-        <div class="modal-footer"></div>
-      </div>
-    </div>
-  </div>
-  <script src="build/TMViz.bundle.js" charset="utf-8"></script>
-  <script src="build/main.bundle.js" charset="utf-8"></script>
-</body>
-</html>
