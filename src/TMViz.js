@@ -6,7 +6,7 @@ import StateViz from './state-diagram/StateViz.js';
 import { watchInit } from './watch.js';
 import * as d3 from 'd3';
 
-// ... (all helper functions are the same)
+// ... (all helper functions are unchanged)
 function animatedTransition(graph, animationCallback) {
   return function (state, symbol) {
     const tuple = graph.getInstructionAndEdge(state, symbol);
@@ -34,6 +34,7 @@ function pulseEdge(edge) {
     .transition()
     .duration(0)
     .on('start', function () {
+      // eslint-disable-next-line no-invalid-this
       d3.select(this).classed('active-edge', false);
     })
     .style('stroke', null)
@@ -59,12 +60,6 @@ function addBlankTape(div, spec) {
 export default class TMViz {
   constructor(div, spec, posTable) {
     div = d3.select(div);
-
-    // =================================================================
-    // =========== FIX: CLEAR THE CONTAINER ON EVERY LOAD ==============
-    // =================================================================
-    div.selectAll('*').remove();
-
     const graph = new StateGraph(spec.table);
     this.stateviz = new StateViz(
       div,
@@ -89,6 +84,8 @@ export default class TMViz {
       }
     };
     
+    // FIX: Check for '3tape' specifically and default everything else to 1-tape.
+    // This makes the existing examples work again.
     if (spec.type === '3tape') {
       const tapes = [
         addTape(div, spec),
@@ -101,6 +98,7 @@ export default class TMViz {
         tapes
       );
     } else {
+      // Default to a 1-tape machine for all other cases
       this.machine = new TuringMachine1Tape(
         animatedTransition(graph, animateAndContinue),
         spec.startState,
@@ -132,10 +130,6 @@ export default class TMViz {
     });
   }
 
-  stop() {
-    this.isRunning = false;
-  }
-
   step() {
     if (!this.machine.step()) {
       this.isRunning = false;
@@ -148,15 +142,22 @@ export default class TMViz {
     this.isHalted = false;
     this.machine.state = this.__spec.startState;
 
-    // This is a more robust way to handle reset
-    this.__parentDiv.selectAll('*').remove();
-    this.constructor(this.__parentDiv.node(), this.__spec, this.positionTable);
+    if (this.machine.tapes) { 
+      this.machine.tapes.forEach(tape => tape.domNode.remove());
+      this.machine.tapes = [
+        addTape(this.__parentDiv, this.__spec),
+        addBlankTape(this.__parentDiv, { blank: this.__spec.blank }),
+        addBlankTape(this.__parentDiv, { blank: this.__spec.blank }),
+      ];
+    } else {
+      this.machine.tape.domNode.remove();
+      this.machine.tape = addTape(this.__parentDiv, this.__spec);
+    }
   }
 
   get positionTable() {
     return this.stateviz.positionTable;
   }
-
   set positionTable(posTable) {
     this.stateviz.positionTable = posTable;
   }

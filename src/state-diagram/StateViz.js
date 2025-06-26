@@ -1,124 +1,348 @@
 import * as d3 from 'd3';
+import './StateViz.css';
 
-// Helper function to create a unique ID for edges
-function edgeId(edge) {
-  const labels = edge.labels.join('').replace(/[^a-zA-Z0-9]/g, '');
-  return `edge-${edge.source.label}-${edge.target.label}-${labels}`;
-}
+/* eslint-disable no-invalid-this */
 
-export default class StateViz {
-  constructor(container, vertexMap, edges) {
-    const nodes = Object.values(vertexMap);
-    const links = edges;
-    this.vertexMap = vertexMap;
+// --- Vector Math Utilities ---
 
-    const width = container.node().getBoundingClientRect().width || 600;
-    const height = 500;
+const addV = (a, b) => a.map((x, i) => x + b[i]);
+const negateV = a => a.map(x => -x);
+const subtractV = (a, b) => addV(a, negateV(b));
+const multiplyV = (a, scalar) => a.map(x => x * scalar);
+const normSqV = a => a.reduce((sum, x) => sum + x * x, 0);
+const normV = a => Math.sqrt(normSqV(a));
+const unitV = a => {
+  const n = normV(a);
+  return n === 0 ? a.map(() => 0) : a.map(x => x / n);
+};
 
-    // FIX: The line 'container.selectAll('*').remove()' has been removed from here.
-    
-    const svg = container.append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('viewBox', [0, 0, width, height]);
+const angleV = ([x, y]) => Math.atan2(y, x);
+const vectorFromLengthAngle = (l, angle) => [Math.cos(angle) * l, Math.sin(angle) * l];
 
-    svg.append('defs').selectAll('marker')
-      .data(['arrowhead'])
-      .join('marker')
-        .attr('id', String)
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 25)
-        .attr('refY', 0)
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
-        .attr('orient', 'auto')
-      .append('path')
-        .attr('d', 'M0,-5L10,0L0,5');
+// --- Edge Counting and Shape ---
 
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.label).distance(150))
-      .force('charge', d3.forceManyBody().strength(-800))
-      .force('center', d3.forceCenter(width / 2, height / 2));
+const EdgeShape = Object.freeze({
+  loop: Symbol('loop'),
+  arc: Symbol('arc'),
+  straight: Symbol('straight')
+});
 
-    const link = svg.append('g')
-      .selectAll('path')
-      .data(links)
-      .join('path')
-        .attr('id', edgeId)
-        .attr('class', 'tm-edge')
-        .attr('marker-end', 'url(#arrowhead)');
-
-    const node = svg.append('g')
-      .attr('class', 'nodes')
-      .selectAll('g')
-      .data(nodes)
-      .join('g');
-
-    node.append('circle')
-      .attr('r', 20)
-      .attr('class', 'tm-state');
-
-    node.append('text')
-      .text(d => d.label)
-      .attr('dy', '0.35em')
-      .attr('text-anchor', 'middle');
-
-    const linkLabel = svg.append('g')
-      .attr('class', 'link-labels')
-      .selectAll('text')
-      .data(links)
-      .join('text')
-        .attr('dy', -5)
-      .append('textPath')
-        .attr('xlink:href', d => `#${edgeId(d)}`)
-        .attr('startOffset', '50%')
-        .text(d => d.labels.join('\n'));
-
-    node.on('click', (event, d) => {
-        d.fixed = !d.fixed;
-        if (d.fixed) {
-            d.fx = d.x;
-            d.fy = d.y;
-        } else {
-            d.fx = null;
-            d.fy = null;
-        }
+class EdgeCounter {
+  constructor(edges) {
+    this.counts = new Map();
+    edges.forEach(e => {
+      const key = `${e.source.index},${e.target.index}`;
+      this.counts.set(key, (this.counts.get(key) || 0) + 1);
     });
-
-    function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
+  }
+  numEdgesFromTo(src, target) {
+    return this.counts.get(`${src},${target}`) || 0;
+  }
+  shapeForEdge(e) {
+    if (e.target.index === e.source.index) {
+      return EdgeShape.loop;
+    } else if (this.numEdgesFromTo(e.target.index, e.source.index)) {
+      return EdgeShape.arc;
+    } else {
+      return EdgeShape.straight;
     }
-
-    function dragged(event, d) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      if (!d.fixed) {
-        d.fx = null;
-        d.fy = null;
-      }
-    }
-
-    node.call(d3.drag()
-      .on('start', dragstarted)
-      .on('drag', dragged)
-      .on('end', dragended));
-
-    simulation.on('tick', () => {
-      link.attr('d', d => {
-        const dx = d.target.x - d.source.x;
-        const dy = d.target.y - d.source.y;
-        const dr = d.source === d.target ? 100 : 0;
-        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
-      });
-      node.attr('transform', d => `translate(${d.x},${d.y})`);
-    });
-
-    this.simulation = simulation;
   }
 }
+
+// --- Edge Path Calculation ---
+
+function edgePathFor(nodeRadius, shape, d) {
+  if (shape === EdgeShape.loop) {
+    const loopEndOffset = vectorFromLengthAngle(nodeRadius, -15 * Math.PI / 180);
+    const loopArc = ` a 19,27 45 1,1 ${loopEndOffset[0]},${loopEndOffset[1] + nodeRadius}`;
+    return function () {
+      const x1 = d.source.x, y1 = d.source.y;
+      return `M ${x1},${y1 - nodeRadius}${loopArc}`;
+    };
+  }
+  if (shape === EdgeShape.arc) {
+    return function () {
+      const p1 = [d.source.x, d.source.y];
+      const p2 = [d.target.x, d.target.y];
+      const offset = subtractV(p2, p1);
+      const radius = 6 / 5 * normV(offset);
+      const angle = angleV(offset);
+      const sep = -Math.PI / 4;
+      const source = addV(p1, vectorFromLengthAngle(nodeRadius, angle + sep));
+      const target = addV(p2, vectorFromLengthAngle(nodeRadius, angle + Math.PI - sep));
+      return (p1[0] <= p2[0])
+        ? `M ${source[0]} ${source[1]} A ${radius} ${radius} 0 0,1 ${target[0]} ${target[1]}`
+        : `M ${target[0]} ${target[1]} A ${radius} ${radius} 0 0,0 ${source[0]} ${source[1]}`;
+    };
+  }
+  // straight
+  return function () {
+    const p1 = [d.source.x, d.source.y];
+    const p2 = [d.target.x, d.target.y];
+    const offset = subtractV(p2, p1);
+    if (offset[0] === 0 && offset[1] === 0) return null;
+    const target = subtractV(p2, multiplyV(unitV(offset), nodeRadius));
+    return `M ${p1[0]} ${p1[1]} L ${target[0]} ${target[1]}`;
+  };
+}
+
+const rectCenter = svgrect => ({
+  x: svgrect.x + svgrect.width / 2,
+  y: svgrect.y + svgrect.height / 2
+});
+
+const identity = x => x;
+const noop = () => {};
+
+const limitRange = (min, max, value) => Math.max(min, Math.min(value, max));
+
+const appendSVGTo = div => div.append('svg');
+
+// --- Object Utilities ---
+
+const pick = (obj, keys) =>
+  Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(obj, key)).map(key => [key, obj[key]]));
+
+const mapValues = (obj, fn) =>
+  Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fn(v, k)]));
+
+const forEachObj = (obj, fn) => {
+  Object.entries(obj).forEach(([k, v]) => fn(v, k));
+};
+
+// --- Main StateViz Function ---
+
+/**
+ * Create a state diagram inside an SVG.
+ * Each vertex/edge (node/link) object is also annotated with @.domNode@
+ * corresponding to its SVG element.
+ *
+ * Note: currently, element IDs (e.g. for textPath) will collide if multiple
+ * diagrams are on the same document (HTML page).
+ * @param  {d3.Selection}      container     Container to add the SVG to.
+ * @param  {[LayoutNode] | StateMap} nodes  Parameter to D3's force.nodes.
+ *   Important: passing a StateMap is recommended when using setPositionTable.
+ *   Passing an array will key the state nodes by array index.
+ * @param  {[LayoutEdge]}     linkArray     Parameter to D3's force.links.
+ */
+export default function StateViz(container, nodes, linkArray) {
+  const w = 800;
+  const h = 500;
+  const linkDistance = 140;
+  const nodeRadius = 20;
+
+  const colors = d3.scaleOrdinal(d3.schemeCategory10);
+
+  const svg = appendSVGTo(container, h / w);
+  svg
+    .attr('viewBox', `0 0 ${w} ${h}`)
+    .attr('version', '1.1')
+    .attr('xmlns', 'http://www.w3.org/2000/svg')
+    .attr('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
+  // Force Layout
+  function dragstart(d) {
+    force.alphaTarget(0.3).restart();
+    svg.transition().style('box-shadow', 'inset 0 0 1px gold');
+  }
+  function dragend(d) {
+    force.alphaTarget(0);
+    svg.transition().style('box-shadow', null);
+  }
+  function releasenode(d) {
+    d.fx = null;
+    d.fy = null;
+    force.alpha(1).restart();
+  }
+  
+  const nodeArray = Array.isArray(nodes) ? nodes : Object.values(nodes);
+  this.__stateMap = nodes;
+
+  const force = d3.forceSimulation(nodeArray)
+    .force('link', d3.forceLink(linkArray).distance(linkDistance))
+    .force('charge', d3.forceManyBody().strength(-500))
+    .force('center', d3.forceCenter(w / 2, h / 2))
+    .alpha(1)
+    .alphaDecay(0.0228);
+
+  const drag = d3.drag()
+    .on('start', function (_evt, d) {
+      d.fx = d.x;
+      d.fy = d.y;
+      dragstart(d);
+    })
+    .on('end', function (_evt, d) {
+      d.fx = null;
+      d.fy = null;
+      dragend(d);
+    });
+
+  // Edges
+  const edgeCounter = new EdgeCounter(linkArray);
+
+  const edgeselection = svg.selectAll('.edgepath')
+    .data(linkArray)
+    .enter();
+
+  const edgegroups = edgeselection.append('g');
+
+  const labelAbove = (d, i) => `${-1.1 * (i + 1)}em`;
+  const labelBelow = (d, i) => `${0.6 + 1.1 * (i + 1)}em`;
+
+  edgegroups.each(function (edgeD, edgeIndex) {
+    const group = d3.select(this);
+    const edgepath = group
+      .append('path')
+      .attr('class', 'edgepath')
+      .attr('id', `edgepath${edgeIndex}`)
+      .each(function (d) { d.domNode = this; });
+    const labels = group.selectAll('.edgelabel')
+      .data(edgeD.labels).enter()
+      .append('text')
+      .attr('class', 'edgelabel');
+    labels.append('textPath')
+      .attr('xlink:href', () => `#edgepath${edgeIndex}`)
+      .attr('startOffset', '50%')
+      .text(identity);
+
+    const shape = edgeCounter.shapeForEdge(edgeD);
+    edgeD.getPath = edgePathFor(nodeRadius, shape, edgeD);
+    switch (shape) {
+      case EdgeShape.straight:
+        labels.attr('dy', labelAbove);
+        edgeD.refreshLabels = function () {
+          labels.attr('transform', function () {
+            if (edgeD.target.x < edgeD.source.x) {
+              const c = rectCenter(this.getBBox());
+              return `rotate(180 ${c.x} ${c.y})`;
+            }
+            return null;
+          });
+        };
+        break;
+      case EdgeShape.arc: {
+        let isFlipped;
+        edgeD.refreshLabels = function () {
+          const shouldFlip = edgeD.target.x < edgeD.source.x;
+          if (shouldFlip !== isFlipped) {
+            edgepath.classed('reversed-arc', shouldFlip);
+            labels.attr('dy', shouldFlip ? labelBelow : labelAbove);
+            isFlipped = shouldFlip;
+          }
+        };
+        break;
+      }
+      case EdgeShape.loop:
+        labels.attr('transform', (d, i) =>
+          `translate(${8 * (i + 1)} ${-8 * (i + 1)})`
+        );
+        edgeD.refreshLabels = noop;
+        break;
+      default:
+        edgeD.refreshLabels = noop;
+    }
+  });
+  const edgepaths = edgegroups.selectAll('.edgepath');
+
+  // Nodes
+  const nodeSelection = svg.selectAll('.node')
+    .data(nodeArray)
+    .enter();
+
+  const nodecircles = nodeSelection
+    .append('circle')
+    .attr('class', 'node')
+    .attr('r', nodeRadius)
+    .style('fill', (d, i) => colors(i))
+    .each(function (d) { d.domNode = this; })
+    .on('dblclick', releasenode)
+    .call(drag);
+
+  const nodelabels = nodeSelection
+    .append('text')
+    .attr('class', 'nodelabel')
+    .attr('dy', '0.25em')
+    .text(d => d.label);
+
+  // Arrowheads
+  const svgdefs = svg.append('defs');
+  svgdefs.selectAll('marker')
+    .data(['arrowhead', 'active-arrowhead', 'reversed-arrowhead', 'reversed-active-arrowhead'])
+    .enter().append('marker')
+    .attr('id', d => d)
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', d => (d.startsWith('reversed-')) ? 0 : 10)
+    .attr('orient', 'auto')
+    .attr('markerWidth', 10)
+    .attr('markerHeight', 10)
+    .append('path')
+    .attr('d', 'M 0 -5 L 10 0 L 0 5 Z')
+    .attr('transform', d => (d.startsWith('reversed-')) ? 'rotate(180 5 0)' : null);
+
+  const svgCSS = `
+    .edgepath {
+      marker-end: url(#arrowhead);
+    }
+    .edgepath.active-edge {
+      marker-end: url(#active-arrowhead);
+    }
+    .edgepath.reversed-arc {
+      marker-start: url(#reversed-arrowhead);
+      marker-end: none;
+    }
+    .edgepath.active-edge.reversed-arc {
+      marker-start: url(#reversed-active-arrowhead);
+      marker-end: none;
+    }
+  `;
+  svg.append('style').each(function () {
+    if (this.styleSheet) {
+      this.styleSheet.cssText = svgCSS;
+    } else {
+      this.textContent = svgCSS;
+    }
+  });
+
+  // Force Layout Update
+  force.on('tick', function () {
+    nodecircles
+      .attr('cx', d => d.x = limitRange(nodeRadius, w - nodeRadius, d.x))
+      .attr('cy', d => d.y = limitRange(nodeRadius, h - nodeRadius, d.y));
+
+    nodelabels
+      .attr('x', d => d.x)
+      .attr('y', d => d.y);
+
+    edgepaths.attr('d', d => d.getPath());
+
+    edgegroups.each(function (d) { d.refreshLabels(); });
+
+    if (nodeArray.every(d => d.fx !== undefined && d.fy !== undefined)) {
+      force.stop();
+    }
+  });
+  this.force = force;
+}
+
+// --- Positioning API ---
+
+function getPositionTable(stateMap) {
+  return mapValues(stateMap, node => pick(node, ['x', 'y', 'px', 'py', 'fixed']));
+}
+
+function setPositionTable(posTable, stateMap) {
+  forEachObj(stateMap, (node, state) => {
+    const position = posTable[state];
+    if (position !== undefined) {
+      Object.assign(node, position);
+    }
+  });
+}
+
+Object.defineProperty(StateViz.prototype, 'positionTable', {
+  get() { return getPositionTable(this.__stateMap); },
+  set(posTable) {
+    setPositionTable(posTable, this.__stateMap);
+    this.force.alpha(1).restart();
+  }
+});
