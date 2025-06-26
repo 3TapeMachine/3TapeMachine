@@ -1,65 +1,134 @@
+import { parseSpec } from './parser.js';
 import TMViz from './TMViz.js';
-import { formatError } from './sharing/format.js';
+import { watchInit } from './watch.js';
 
 /**
- * A wrapper for TMViz that uses a declarative-style interface.
+ * Turing machine simulator component.
+ *
+ * Contains a state diagram, tape diagram, and button controls.
+ * @param {HTMLElement} container
+ * @param {Object} buttons
  */
 export default class TMSimulator {
-  /**
-   * @param {Node} container - The DOM element to put the visualization in.
-   */
-  constructor(container) {
+  constructor(container, buttons) {
     this.container = container;
-    this.viz = null; // The TMViz instance.
-    this.error = null;
-    this.onError = null;
-  }
+    this.buttons = buttons;
 
-  get sourceCode() {
-    return this.viz ? this.viz.__spec : null;
-  }
-
-  set sourceCode(spec) {
-    if (this.viz && this.viz.__spec === spec) { return; }
-
-    // This 'if' statement is the critical fix.
-    // It prevents the crash by making sure this.viz exists before we stop it.
-    if (this.viz) {
-      this.viz.stop();
-    }
-    
-    this.container.style.display = 'none';
-    this.error = null;
-
-    if (spec != null) {
-      try {
-        this.viz = new TMViz(this.container, spec);
-        this.container.style.display = null;
-      } catch (e) {
-        this.viz = null;
-        this.error = formatError(e);
+    this.buttons.step.addEventListener('click', () => {
+      if (this.machine) {
+        this.machine.isRunning = false;
+        this.machine.step();
       }
-    }
-    if (this.onError) { this.onError(this.error); }
+    });
+    this.buttons.run.addEventListener('click', () => {
+      if (this.machine) {
+        this.machine.isRunning = !this.machine.isRunning;
+      }
+    });
+    this.buttons.reset.addEventListener('click', () => {
+      if (this.machine) {
+        this.machine.reset();
+      }
+    });
+
+    // Collect all button elements into an array for easy disabling/enabling
+    this.buttons.all = Object.values(this.buttons).filter(
+      b => b instanceof HTMLElement || (b && typeof b.disabled !== 'undefined')
+    );
+
+    // The innerHTML for the "Run" button.
+    this.htmlForRunButton =
+    '<i class="bi bi-play-fill"></i><br>Run';
+    this.htmlForPauseButton =
+    '<i class="bi bi-pause-fill"></i><br>Pause';
+
+    this.clear();
   }
 
-  /**
-   * Erase the contents of the simulator.
-   */
   clear() {
     this.sourceCode = null;
   }
 
-  /**
-   * A table of positions of the states in the diagram.
-   * @type {LayoutPositions}
-   */
-  get positionTable() {
-    return this.viz ? this.viz.positionTable : null;
+  get sourceCode() {
+    return this.__sourceCode;
   }
-  set positionTable(val) {
-    if (this.viz) {
-      this.viz.positionTable = val;
+
+  set sourceCode(sourceCode) {
+    if (this.machine) {
+      this.machine.isRunning = false;
+      this.machine.stateviz.force.stop();
+    }
+    if (sourceCode == null) {
+      this.machine = null;
+      this.container.innerHTML = '';
+    } else {
+      const spec = parseSpec(sourceCode);
+      if (this.machine) {
+        // update: copy & restore positions, clear & load contents
+        const posTable = this.machine.positionTable;
+        this.clear();
+        this.machine = new TMViz(this.container, spec, posTable);
+      } else {
+        // load new
+        this.machine = new TMViz(this.container, spec);
+      }
+    }
+    this.__sourceCode = sourceCode;
+  }
+
+  get positionTable() {
+    return this.machine && this.machine.positionTable;
+  }
+
+  set positionTable(posTable) {
+    if (this.machine && posTable) {
+      this.machine.positionTable = posTable;
     }
   }
+
+  get machine() {
+    return this.__machine;
+  }
+
+  set machine(machine) {
+    this.__machine = machine;
+    this.rebindButtons();
+  }
+
+  // bind: .disabled for Step and Run, and .innerHTML (Run/Pause) for Run
+  rebindButtons() {
+    const buttons = this.buttons;
+    const enable = this.machine != null;
+    if (enable) {
+      rebindStepRun(
+        buttons.step,
+        buttons.run,
+        this.htmlForRunButton,
+        this.htmlForPauseButton,
+        this.machine
+      );
+    }
+    buttons.all.forEach(b => {
+      b.disabled = !enable;
+    });
+  }
+}
+
+// Helper for binding step/run/pause button state
+function rebindStepRun(stepButton, runButton, runHTML, pauseHTML, machine) {
+  function onHaltedChange(isHalted) {
+    stepButton.disabled = isHalted;
+    runButton.disabled = isHalted;
+  }
+  function onRunningChange(isRunning) {
+    runButton.innerHTML = isRunning ? pauseHTML : runHTML;
+  }
+  watchInit(machine, 'isHalted', function (prop, oldval, isHalted) {
+    onHaltedChange(isHalted);
+    return isHalted;
+  });
+  watchInit(machine, 'isRunning', function (prop, oldval, isRunning) {
+    onRunningChange(isRunning);
+    return isRunning;
+  });
 }
