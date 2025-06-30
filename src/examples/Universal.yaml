@@ -1,0 +1,103 @@
+name: U (univerasl Turing Mahcine)
+description: |
+  The universal Turing Machine (U) is a Turing Machne smulator. The encoding used is a simple one,
+  where 1s are used to represent different symbols and states, and 0s are used as separator (unary notation).
+  U is not the most efficient way to execute Turing Mahcines, but it shows that TMs can simulate other TMs and
+  cements their status as universal computing devices.
+source code: |
+  # The specific coding for the input works by first encoding the transitons, then the simulated input.
+  # Specifically: 
+  #      Input state (three 1s for the initial state, four 1s for the next state, etc.) followed by a 0.
+  #      Input symbol (single 1 for blank, two 1s for the first non-blank symbol, etc.) followed by a 0.
+  #      Next state (one 1 or two 1s for halting states, h_a and h_r) followed by a 0.
+  #      Wrte sybol followed by a 0.
+  #      Move direction (one 1 for left, two 1s for right, three 1s for stay) followed by a 0.
+  #  A second 0 in a row will separate transitions
+  #  A third 0 in a row will separate the transitions from the input.
+  # Using these rules, the "binary increment" machine with initial input '1011' encodes as
+  # "11101011110101100111011011101110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110".
+  type: 3tape
+  input: '11101011110101100111011011101110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110'
+  blank: ' '
+  wild: '.'
+
+  # How it works:
+  # Tape 3 will contain the simulated state, initialized to 1110.
+  # Tape 2 will contain the simulated tape, copied from the input portion of tape 1's input.
+  # Tape 1 will contain the transition table.
+
+  # The machine will:
+  # Scan tape 1 to match the current state (on tape 3) and the current symbol (on tape 2).
+  # No match = halt. (with some changes, we could copy the simulated tape to tape 1)
+  # If a match is found, it will:
+  # 1. Replace the state on tape 3 with the next state.
+  # 2. Replace the symbol on tape 2 with the write symbol. Note that this may mean shifting the existing tape contents left or right.
+  # 3. Move the tape head on tape 2 in the specified direction. This will mean shifting to the next 0 rather than a single step, and may mean creating a new blank (10).
+  # 4. Rewind tape 1 and repeat.
+
+  start state: WriteStartState
+  table:
+  # Initialize, part1: Write the initial state to tape 3
+    WriteStartState:
+      ...: {write: '..1', move: SSR, next: WSS1}
+    WSS1:
+      ...: {write: '..1', move: SSR, next: WSS2}
+    WSS2:
+      ...: {write: '..1', move: SSR, next: WSS3}
+    WSS3:
+      ...: {write: '..0', move: SSL, next: SkipToInput}
+
+    
+  # Initialize, part2: Copy the input tape to tape 2. 3 0s in a row mark the start of input
+  # A blank prior to 3 0s indicate no input (blank tape)
+    SkipToInput:
+      1..: {move: RSS}
+      0..: {move: RSS, next: SkipToInput1}
+      ' ..': {next: BlankInput}
+    SkipToInput1:
+      1..: {move: RSS, next: SkipToInput}
+      0..: {move: RSS, next: SkipToInput2}
+      ' ..': {next: BlankInput}
+    SkipToInput2:
+      1..: {move: RSS, next: SkipToInput}
+      0..: {move: RSS, next: CopyInput}
+      ' ..': {next: BlankInput}
+    BlankInput:
+      ...: {write: '.1.', move: SRS, next: BlankInput1}
+    BlankInput1:
+      ...: {write: '.0.', move: SLS, next: RewindStart}
+    CopyInput:
+      1..: {write: '01.', move: RRS}
+      0..: {write: '00.', move: RRS}
+      ' ..': {move: LLS, next: RewindInput}
+    RewindInput:
+    .1.: {move: LLS}
+    .0.: {move: LLS}
+    '. .': {move: SRS, next: RewindStart}
+
+    # Setup for next transition: Rewind the state on tape 3 and transition table on tape 1
+    RewindStart:
+      ..1: {move: SSL}
+      '.. ': {move: SSR, next: RewindTransitions}
+    RewindTransitions:
+      1..: {move: LSS}
+      0..: {move: LSS}
+      ' ..': {move: RSS, next: MatchState}
+      
+    accept:
+  
+positions:
+  WriteStartState: {x: 230, y: 250}
+  WSS1: {x: 235, y: 250}
+  WSS2: {x: 240, y: 250}
+  WSS3: {x: 245, y: 250}
+  SkipToInput: {x: 300, y: 260}
+  SkipToInput1: {x: 305, y: 260}
+  SkipToInput2: {x: 310, y: 260}
+  BlankInput: {x: 300, y: 200}
+  BlankInput1: {x: 305, y: 200}
+  CopyInput: {x: 300, y: 210}
+  RewindInput: {x: 305, y: 210}
+  RewindStart: {x: 325, y: 300}
+  RewindTransitions: {x: 330, y: 300}
+  accept: {x: 230.01, y: 380}
