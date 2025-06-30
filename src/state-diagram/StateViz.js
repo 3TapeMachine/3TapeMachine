@@ -165,15 +165,22 @@ export default function StateViz(container, nodes, linkArray) {
     .alpha(1)
     .alphaDecay(0.0228);
 
+  // --- DRAG BEHAVIOR FOR CIRCLES ---
   const drag = d3.drag()
-    .on('start', function (_evt, d) {
+    .on('start', function (event, d) {
+      if (!event.active) force.alphaTarget(0.3).restart();
       d.fx = d.x;
       d.fy = d.y;
       dragstart(d);
     })
-    .on('end', function (_evt, d) {
-      d.fx = null;
-      d.fy = null;
+    .on('drag', function (event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    })
+    .on('end', function (event, d) {
+      if (!event.active) force.alphaTarget(0);
+      d.fx = event.x;
+      d.fy = event.y;
       dragend(d);
     });
 
@@ -256,7 +263,7 @@ export default function StateViz(container, nodes, linkArray) {
     .style('fill', (d, i) => colors(i))
     .each(function (d) { d.domNode = this; })
     .on('dblclick', releasenode)
-    .call(drag);
+    .call(drag); // <-- Drag behavior attached to circles only
 
   const nodelabels = nodeSelection
     .append('text')
