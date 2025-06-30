@@ -7,7 +7,8 @@ source code: |
   table:
     # scan to the rightmost digit
     right:
-      [1,0]: R
+      1: R
+      0: R
       ' '  : {L: carry}
     # then carry the 1
     carry:
