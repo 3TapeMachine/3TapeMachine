@@ -15,10 +15,12 @@ source code: |
       # Base case: empty string.
       '#': {R: check}
     have0:
-      [0,1]: R
+      0: R
+      1: R
       '#': {R: match0}
     have1:
-      [0,1]: R
+      0: R
+      1: R
       '#': {R: match1}
     match0:
       x: R
@@ -27,7 +29,10 @@ source code: |
       x: R
       1: {write: x, L: back}
     back:
-      [0,1,'#',x]: L
+      0: L
+      1: L
+      '#': L
+      x: L
       ' ': {R: start}
     check:
       x: R

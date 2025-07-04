@@ -67,8 +67,8 @@ source code: |
     BlankInput1:
       ...: {write: '.0.', move: SLS, next: RewindStart}
     CopyInput:
-      1..: {write: '01.', move: RRS}
-      0..: {write: '00.', move: RRS}
+      1..: {write: ' 1.', move: RRS}
+      0..: {write: ' 0.', move: RRS}
       ' ..': {move: LLS, next: RewindInput}
     RewindInput:
     .1.: {move: LLS}

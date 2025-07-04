@@ -15,7 +15,9 @@ source code: |
     b+:     {b: R,   c: {R: c+}}
     c+:     {c: R, ' ': {L: left}}
     left:
-      [a,b,c]: L
+      a : L
+      b : L
+      c : L
       ' ': {R: eachA}
     # Then check that i*j = k.
     #   The approach is two nested loops:
@@ -31,10 +33,12 @@ source code: |
       b: {write: B, R: markC}
       C: {L: nextA}
     markC:
-      [b,C]: R
+      b: R
+      C: R
       c: {write: C, L: nextB}
     nextB:
-      [b,C]: L
+      b: L
+      C: L
       B: {R: eachB}
     nextA:
       a: L
@@ -42,7 +46,8 @@ source code: |
       ' ': {R: eachA}
 
     scan:
-      [b,C]: R
+      b: R
+      C: R
       ' ': {R: accept}
     accept:
 positions:

@@ -42,7 +42,9 @@ source code: |
       x  : R
     back:
       ' ': {R: one}
-      [0,x]: L
+      0: L
+      x: L
+      
     accept:
     reject:
 positions:

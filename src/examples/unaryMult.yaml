@@ -19,12 +19,13 @@ source code: |
       '*': {R: eachB} # enter copier
     nextA: # return from copier
       ' ': {write: '|', R: eachA}
-      ['|','*']: L
+      '|': L
+      '*': L
 
     skip:
       '|': R
-      ' ': {R: done}
-    done:
+      ' ': {R: accept}
+    accept:
 
     # This is the 'copy 1s' machine, with ' ' as 0 and '|' as 1.
     eachB:

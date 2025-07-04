@@ -15,10 +15,12 @@ source code: |
       b: {write: ' ', R: haveB}
       ' ': accept # empty string
     haveA:
-      [a,b]: R
+      a: R
+      b: R
       ' ': {L: matchA}
     haveB:
-      [a,b]: R
+      a: R
+      b: R
       ' ': {L: matchB}
     matchA:
       a: {write: ' ', L: back} # same symbol at both ends
@@ -29,7 +31,8 @@ source code: |
       b: {write: ' ', L: back} # same symbol at both ends
       ' ': accept # single symbol
     back:
-      [a,b]: L
+      a: L
+      b: L
       ' ': {R: start}
     accept:
     reject:

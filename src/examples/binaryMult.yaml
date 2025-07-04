@@ -9,11 +9,14 @@ source code: |
   table:
     # Prefix the input with a '+', and go to the rightmost digit.
     start:
-      [0,1]: {L: init}
+      0: {L : init}
+      1: {L: init}
     init:
       ' ': {write: '+', R: right}
     right:
-      [0,1,'*']: R
+      0: R
+      1: R
+      '*': R
       ' ': {L: readB}
 
     # Read and erase the last digit of the multiplier.
@@ -23,14 +26,18 @@ source code: |
       0: {write: ' ', L: doubleL}
       1: {write: ' ', L: addA}
     addA:
-      [0,1]: L
+      0: L
+      1: L
       '*': {L: read} # enter adder
     # Double the multiplicand by appending a 0.
     doubleL:
-      [0,1]: L
+      0: L
+      1: L
       '*': {write: 0, R: shift}
     double: # return from adder
-      [0,1,+]: R
+      0: R
+      1: R
+      '+': R
       '*': {write: 0, R: shift}
     # Make room by shifting the multiplier right 1 cell.
     shift:
@@ -47,9 +54,10 @@ source code: |
       ' ': {write: 1, R: right}
 
     tidy:
-      [0,1]: {write: ' ', L}
-      +: {write: ' ', L: done}
-    done:
+      0: {write: ' ', L: accept}
+      1: {write: ' ', L: accept}
+      +: {write: ' ', L: accept}
+    accept:
 
   # This is the 'binary addition' machine almost verbatim.
   # It's adjusted to keep the '+'
@@ -58,29 +66,49 @@ source code: |
       0: {write: c, L: have0}
       1: {write: c, L: have1}
       +: {L: rewrite} # keep the +
-    have0: {[0,1]: L, +: {L: add0}}
-    have1: {[0,1]: L, +: {L: add1}}
+    have0: 
+      0: L
+      1: L
+      +: {L: add0}
+    have1: 
+      0: L
+      1: L
+      +: {L: add1}
     add0:
-      [0,' ']: {write: O, R: back0}
+      0: {write: O, R: back0}
+      ' ': {write: O, R: back0}
       1      : {write: I, R: back0}
-      [O,I]  : L
+      O      : L
+      I      : L
     add1:
-      [0,' ']: {write: I, R: back1}
+      0: {write: I, R: back1}
+      ' ': {write: I, R: back1}
       1      : {write: O, L: carry}
-      [O,I]  : L
+      O      : L
+      I      : L
     carry:
-      [0,' ']: {write: 1, R: back1}
+      0: {write: 1, R: back1}
+      ' ': {write: 1, R: back1}
       1      : {write: 0, L}
     back0:
-      [0,1,O,I,+]: R
+      0: R
+      1: R  
+      +: R
+      O: R
+      I: R
       c: {write: 0, L: read}
     back1:
-      [0,1,O,I,+]: R
+      0: R
+      1: R
+      +: R
+      O: R
+      I: R
       c: {write: 1, L: read}
     rewrite:
       O: {write: 0, L}
       I: {write: 1, L}
-      [0,1]: L
+      0: L
+      1: L
       ' ': {R: double} # when done, go to the 'double' state
 
 

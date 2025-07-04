@@ -70,8 +70,8 @@ source code: |
       I: {write: 1, L}
       0: L
       1: L
-      ' ': {R: done}
-    done:
+      ' ': {R: accept}
+    accept:
 
 
   # Exercise:

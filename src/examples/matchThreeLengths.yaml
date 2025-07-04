@@ -14,16 +14,22 @@ source code: |
       a: {write: A, R: qB}
       B: {R: scan}
     qB:
-      [a,B]: R
+      a: R
+      B: R
       b: {write: B, R: qC}
     qC:
-      [b,C]: R
+      b: R
+      C: R
       c: {write: C, L: back}
     back:
-      [a,B,b,C]: L
+      a: L
+      b: L
+      B: L
+      C: L
       A: {R: qA}
     scan:
-      [B,C]: R
+      B: R
+      C: R
       ' ': {R: accept}
     accept:
 
