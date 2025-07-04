@@ -25,22 +25,22 @@ source code: |
     # and add it to the next place of the first number,
     # marking the place (using O or I) as already added.
     have0: 
-       0: L
-       1: L
-       +: {L: add0}
+      0: L
+      1: L
+      +: {L: add0}
     have1: 
-        0: L
-        1: L
-        +: {L: add1}
+      0: L
+      1: L
+      +: {L: add1}
     add0:
-        0  : {write: O, R: back0}
-        ' ': {write: O, R: back0}
+      0  : {write: O, R: back0}
+      ' ': {write: O, R: back0}
       1    : {write: I, R: back0}
       O    : L
       I    : L
     add1:
-        0 : {write: I, R: back1}
-        ' ': {write: I, R: back1}
+      0 : {write: I, R: back1}
+      ' ': {write: I, R: back1}
       1 : {write: O, L : carry}
       O : L
       I : L
@@ -58,7 +58,7 @@ source code: |
       I: R
       c: {write: 0, L: read}
     back1:
-        0: R
+      0: R
       1: R
       +: R
       O: R
@@ -84,7 +84,7 @@ source code: |
 positions:
   right:   {x: 300, y: 130}
   rewrite: {x: 500, y: 130}
-  done:    {x: 620, y: 130}
+  accept:  {x: 620, y: 130}
 
   back0:  {x: 250, y: 250}
   read:   {x: 400, y: 250}

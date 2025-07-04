@@ -132,7 +132,7 @@ positions:
   start:  {x: 80 , y: 70}
   init:   {x: 190, y: 70}
   tidy:   {x: 730, y: 70}
-  done:   {x: 730, y: 180}
+  accept: {x: 730, y: 180}
 
   right:  {x: 300, y: 115}
   shift:  {x: 600, y: 115}

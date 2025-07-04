@@ -32,6 +32,6 @@ source code: |
   # • Make a machine to subtract 1.
   #   To simplify things, assume the input is always greater than 0.
 positions:
-  right: {x: 230, y: 250}
-  carry: {x: 400, y: 250}
-  done: {x: 570, y: 250}
+  right:  {x: 230, y: 250}
+  carry:  {x: 400, y: 250}
+  accept: {x: 570, y: 250}

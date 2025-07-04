@@ -56,4 +56,4 @@ positions:
 
   nextA:  {x: 280, y: 90}
   skip:   {x: 520, y: 90}
-  done:   {x: 520, y: 190}
+  accept: {x: 520, y: 190}
