@@ -16,6 +16,7 @@ import binaryAdd from './examples/binaryAdd.yaml';
 import unaryMult from './examples/unaryMult.yaml';
 import binaryMult from './examples/binaryMult.yaml';
 import adder3Tape from './examples/adder3Tape.yaml';
+import universal from './examples/Universal.yaml';
 import _template1Tape from './examples/_template1Tape.yaml';
 
 const exampleMap = {
@@ -34,7 +35,8 @@ const exampleMap = {
   binaryAdd,
   unaryMult,
   binaryMult,
-  adder3Tape
+  adder3Tape,
+  universal
 };
 
 const examplePairs = Object.entries(exampleMap).map(([id, yaml]) => {

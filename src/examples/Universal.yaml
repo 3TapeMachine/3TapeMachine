@@ -1,4 +1,4 @@
-name: U (univerasl Turing Mahcine)
+name: U (universal Turing Mahcine)
 description: |
   The universal Turing Machine (U) is a Turing Machne smulator. The encoding used is a simple one,
   where 1s are used to represent different symbols and states, and 0s are used as separator (unary notation).
@@ -16,11 +16,13 @@ source code: |
   #  A third 0 in a row will separate the transitions from the input.
   # Using these rules, the "binary increment" machine with initial input '1011' encodes as
   # "11101011110101100111011011101110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110".
+  
   type: 3tape
   input: '11101011110101100111011011101110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110'
   blank: ' '
   wild: '.'
-
+  start state: WriteStartState
+  
   # How it works:
   # Tape 3 will contain the simulated state, initialized to 1110.
   # Tape 2 will contain the simulated tape, copied from the input portion of tape 1's input.
@@ -35,57 +37,168 @@ source code: |
   # 3. Move the tape head on tape 2 in the specified direction. This will mean shifting to the next 0 rather than a single step, and may mean creating a new blank (10).
   # 4. Rewind tape 1 and repeat.
 
-  start state: WriteStartState
   table:
   # Initialize, part1: Write the initial state to tape 3
     WriteStartState:
-      ...: {write: '..1', move: SSR, next: WSS1}
+      '...': {write: '..1', move: SSR, next: WSS1}
     WSS1:
-      ...: {write: '..1', move: SSR, next: WSS2}
+      '...': {write: '..1', move: SSR, next: WSS2}
     WSS2:
-      ...: {write: '..1', move: SSR, next: WSS3}
+      '...': {write: '..1', move: SSR, next: WSS3}
     WSS3:
-      ...: {write: '..0', move: SSL, next: SkipToInput}
+      '...': {write: '..0', move: SSL, next: SkipToInput}
 
     
   # Initialize, part2: Copy the input tape to tape 2. 3 0s in a row mark the start of input
   # A blank prior to 3 0s indicate no input (blank tape)
     SkipToInput:
-      1..: {move: RSS}
-      0..: {move: RSS, next: SkipToInput1}
+      '1..': {move: RSS}
+      '0..': {move: RSS, next: SkipToInput1}
       ' ..': {next: BlankInput}
     SkipToInput1:
-      1..: {move: RSS, next: SkipToInput}
-      0..: {move: RSS, next: SkipToInput2}
+      '1..': {move: RSS, next: SkipToInput}
+      '0..': {move: RSS, next: SkipToInput2}
       ' ..': {next: BlankInput}
     SkipToInput2:
-      1..: {move: RSS, next: SkipToInput}
-      0..: {move: RSS, next: CopyInput}
+      '1..': {move: RSS, next: SkipToInput}
+      '0..': {move: RSS, next: CopyInput}
       ' ..': {next: BlankInput}
-    BlankInput:
-      ...: {write: '.1.', move: SRS, next: BlankInput1}
-    BlankInput1:
-      ...: {write: '.0.', move: SLS, next: RewindStart}
-    CopyInput:
-      1..: {write: ' 1.', move: RRS}
-      0..: {write: ' 0.', move: RRS}
-      ' ..': {move: LLS, next: RewindInput}
-    RewindInput:
-    .1.: {move: LLS}
-    .0.: {move: LLS}
-    '. .': {move: SRS, next: RewindStart}
 
-    # Setup for next transition: Rewind the state on tape 3 and transition table on tape 1
-    RewindStart:
-      ..1: {move: SSL}
-      '.. ': {move: SSR, next: RewindTransitions}
+    BlankInput:
+      '...': {write: '.1.', move: SRS, next: BlankInput1}
+    BlankInput1:
+      '...': {write: '.0.', move: SLS, next: RewindTransitions}
+
+    CopyInput:
+      '1..': {write: ' 1.', move: RRS}
+      '0..': {write: ' 0.', move: RRS}
+      ' ..': {move: LLS, next: RewindInput}
+
+    RewindInput:
+      '.1.': {move: LLS}
+      '.0.': {move: LLS}
+      '. .': {move: SRS, next: RewindTransitions}
+
+    # Setup for next transition: Rewind the transition table on tape 1 and state on tape 3
     RewindTransitions:
-      1..: {move: LSS}
-      0..: {move: LSS}
-      ' ..': {move: RSS, next: MatchState}
+      '1..': {move: LSS}
+      '0..': {move: LSS}
+      ' ..': {move: RSS, next: RewindState}
       
+    RewindState:
+      '..1': {move: SSL}
+      '.. ': {move: SSR, next: MatchState}
+
+    MatchState:
+      # Match the current state on tape 3 with the transition table on tape 1
+      # If no match, halt.
+      '1.1': {move: RSR}
+      '0.0': {move: RSL, next: MatchSymbol}
+      '1.0': {move: SSL, next: SkipTransition}
+      '0.1': {move: SSR, next: SkipTransition}
+      ' ..': {move: LSR, next: finish}
+
+    MatchSymbol:
+      # Match the current symbol on tape 2 with the transition table on tape 1
+      '11.': {move: RRS}
+      '00.': {move: LSS, next: ChangeStateRewind}
+      '10.': {move: SLS, next: RewindSymbolForNextTransition}
+      '01.': {move: LSS, next: RewindSymbolForNextTransition}
+
+    RewindSymbolForNextTransition:
+      # Rewind the symbol on tape 2
+      '.1.': {move: SLS}
+      '. .': {move: SRS, next: SkipTransition}
+      '.0.': {move: SRS, next: SkipTransition}
+
+    SkipTransition:
+      # Skip to the next transition in tape 1 (00)
+      '1..': {move: RSS}
+      '0..': {move: RSS, next: SkipTransition1}
+    SkipTransition1:  
+      '1..': {move: RSS, next: SkipTransition}
+      '0..': {move: RSS, next: RewindState}
+
+    ChangeStateRewind:
+      # Match found! Rewind state, then copy the next state to tape 3.
+      '..1': {move: SSL}
+      '.. ': {move: SSR, next: WriteNextState}
+    WriteNextState:
+      '1..': {write: '..1', move: RSR}
+      '0..': {write: '..0', move: RSL, next: WriteSymbolRewind}
+
+    WriteSymbolRewind:
+      # Rewind symbol on tape 2, then copy from tape 1
+      '.1.': {move: SLS}
+      '.0.': {move: SRS, next: WriteSymbol}
+      '. .': {move: SRS, next: WriteSymbol}
+    WriteSymbol:
+      '11.': {move: RRS}
+      '00.': {move: RSS, next: MoveHead}
+      '10.': {write: '. .', move: SRS, next: RightShift0}
+      '01.': {write: '. .', move: SRS, next: LeftShiftFastForward}
+
+    RightShift0:
+      '.1.': {write: .0., move: SRS, next: RightShift1}
+      '.0.': {write: .0., move: SRS, next: RightShift0}
+      '. .': {write: .0., move: SLS, next: RiftShiftRewind}
+    RightShift1:
+      '.1.': {write: .1., move: SRS, next: RightShift1}
+      '.0.': {write: .1., move: SRS, next: RightShift0}
+      '. .': {write: .1., move: SLS, next: RiftShiftRewind}
+    RiftShiftRewind:
+      # Rewind the tape after shifting right
+      '.1.': {move: SLS}
+      '.0.': {move: SLS}
+      '. .': {write: .1., move: SSS, next: WriteSymbol}
+
+    LeftShiftFastForward:
+      # Move to rght end of tape 2, then shift left
+      '.1.': {move: SRS}
+      '.0.': {move: SRS}
+      '. .': {move: SLS, next: LeftShiftSpace}
+    LeftShiftSpace:
+      '.1.': {write: '. .', move: SLS, next: LeftShift1}
+      '.0.': {write: '. .', move: SLS, next: LeftShift0}
+    LeftShift0:
+      '.1.': {write: '.0.', move: SLS, next: LeftShift1}
+      '.0.': {write: '.0.', move: SLS, next: LeftShift0}
+      '. .': {write: '.1.', move: SSS, next: WriteSymbol}
+    LeftShift1:
+      '.1.': {write: '.1.', move: SLS, next: LeftShift1}
+      '.0.': {write: '.1.', move: SLS, next: LeftShift0}
+      '. .': {write: '.1.', move: SSS, next: WriteSymbol}
+
+    MoveHead:
+      # Move the tape head on tape 2 in the specified direction.
+      # At this point, the head is on the 0 between the current symbol (S) and the next symbol (R).
+      '10.': {move: RSS, next: MoveHead1}
+
+    MoveHead1:
+      '10.': {move: RSS, next: MoveHead2}   # not R
+      '00.': {move: RRS, next: RewindTransitions}     # R - we are done with this transition
+
+    MoveHead2:
+      '10.': {move: SLS, next: LeftOneSymbol}  # S
+      '00.': {move: LLS, next: LeftTwoSymbol}  # L 
+
+    LeftTwoSymbol:
+      '.1.': {move: SLS}
+      '.0.': {move SLS, next LeftOneSymbol}
+    LeftOneSymbol:
+      '.1.': {move: SLS}
+      '.0.': {move: SRS, next: RewindTransitions} 
+      '. .': {move: SRS, next: RewindTransitions}
+
+    finish:
+      # If we reach here, we have no match, so we halt.
+      # We could copy the simulated tape to tape 1 if needed.
+      '..0': {move: SSS, next: accept}
+      '..1': {move: SSS, next: reject}
+
     accept:
-  
+    reject:
+
 positions:
   WriteStartState: {x: 230, y: 250}
   WSS1: {x: 235, y: 250}
@@ -98,6 +211,9 @@ positions:
   BlankInput1: {x: 305, y: 200}
   CopyInput: {x: 300, y: 210}
   RewindInput: {x: 305, y: 210}
-  RewindStart: {x: 325, y: 300}
+  RewindState: {x: 325, y: 300}
   RewindTransitions: {x: 330, y: 300}
+  MatchState: {x: 335, y: 300}
+  finish: {x: 235, y: 380}
   accept: {x: 230.01, y: 380}
+  reject: {x: 240.02, y: 380}
