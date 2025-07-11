@@ -66,6 +66,15 @@ export function parseSpec(str) {
   if (obj.blank.length !== 1) {
     throw new TMSpecError('The blank symbol must be a string of length 1', detailsForBlank);
   }
+  if(obj.wild != null) {
+    obj.wild = String(obj.wild);
+    if (obj.wild.length !== 1) {
+      throw new TMSpecError('The wild symbol must be a string of length 1', {
+        problemValue: obj.wild,
+        info: 'The wild symbol is used in 3-tape machines to match any symbol on a tape'
+      });
+    }
+  }
   obj.startState = obj['start state'];
   delete obj['start state'];
   if (obj.startState == null) {

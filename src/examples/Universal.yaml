@@ -1,9 +1,4 @@
-name: U (universal Turing Mahcine)
-description: |
-  The universal Turing Machine (U) is a Turing Machne smulator. The encoding used is a simple one,
-  where 1s are used to represent different symbols and states, and 0s are used as separator (unary notation).
-  U is not the most efficient way to execute Turing Mahcines, but it shows that TMs can simulate other TMs and
-  cements their status as universal computing devices.
+name: U (Universal Turing Machine)
 source code: |
   # The specific coding for the input works by first encoding the transitons, then the simulated input.
   # Specifically: 
@@ -15,10 +10,10 @@ source code: |
   #  A second 0 in a row will separate transitions
   #  A third 0 in a row will separate the transitions from the input.
   # Using these rules, the "binary increment" machine with initial input '1011' encodes as
-  # "11101011110101100111011011101110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110".
+  # "1110101111010110011101101110110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110".
   
   type: 3tape
-  input: '11101011110101100111011011101110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110'
+  input: '1110101111010110011101101110110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110'
   blank: ' '
   wild: '.'
   start state: WriteStartState
@@ -101,7 +96,7 @@ source code: |
     MatchSymbol:
       # Match the current symbol on tape 2 with the transition table on tape 1
       '11.': {move: RRS}
-      '00.': {move: LSS, next: ChangeStateRewind}
+      '00.': {move: RLS, next: ChangeStateRewind}
       '10.': {move: SLS, next: RewindSymbolForNextTransition}
       '01.': {move: LSS, next: RewindSymbolForNextTransition}
 
@@ -139,18 +134,18 @@ source code: |
       '01.': {write: '. .', move: SRS, next: LeftShiftFastForward}
 
     RightShift0:
-      '.1.': {write: .0., move: SRS, next: RightShift1}
-      '.0.': {write: .0., move: SRS, next: RightShift0}
-      '. .': {write: .0., move: SLS, next: RiftShiftRewind}
+      '.1.': {write: '.0.', move: SRS, next: RightShift1}
+      '.0.': {write: '.0.', move: SRS, next: RightShift0}
+      '. .': {write: '.0.', move: SLS, next: RiftShiftRewind}
     RightShift1:
-      '.1.': {write: .1., move: SRS, next: RightShift1}
-      '.0.': {write: .1., move: SRS, next: RightShift0}
-      '. .': {write: .1., move: SLS, next: RiftShiftRewind}
+      '.1.': {write: '.1.', move: SRS, next: RightShift1}
+      '.0.': {write: '.1.', move: SRS, next: RightShift0}
+      '. .': {write: '.1.', move: SLS, next: RiftShiftRewind}
     RiftShiftRewind:
       # Rewind the tape after shifting right
       '.1.': {move: SLS}
       '.0.': {move: SLS}
-      '. .': {write: .1., move: SSS, next: WriteSymbol}
+      '. .': {write: '.1.', move: SSS, next: WriteSymbol}
 
     LeftShiftFastForward:
       # Move to rght end of tape 2, then shift left
@@ -175,8 +170,8 @@ source code: |
       '10.': {move: RSS, next: MoveHead1}
 
     MoveHead1:
-      '10.': {move: RSS, next: MoveHead2}   # not R
-      '00.': {move: RRS, next: RewindTransitions}     # R - we are done with this transition
+      '10.': {move: RSS, next: MoveHead2}       # not R
+      '00.': {move: RRS, next: CheckBlankRight} # R - add blank if needed
 
     MoveHead2:
       '10.': {move: SLS, next: LeftOneSymbol}  # S
@@ -184,12 +179,23 @@ source code: |
 
     LeftTwoSymbol:
       '.1.': {move: SLS}
-      '.0.': {move SLS, next LeftOneSymbol}
+      '.0.': {move: SLS, next: LeftOneSymbol}
+      '. .': {write: '.0.', move: SLS, next: LeftAddBlank}
     LeftOneSymbol:
       '.1.': {move: SLS}
       '.0.': {move: SRS, next: RewindTransitions} 
       '. .': {move: SRS, next: RewindTransitions}
+    LeftAddBlank:
+      '. .': {write: '.1.', move: SSS, next: RewindTransitions}
 
+    CheckBlankRight:
+      # If the next symbol is blank, we need to add a blank.
+      '. .': {write: '.1.', move: SRS, next: AddBlankRight}
+      '.1.': {move: SSS, next: RewindTransitions}
+
+    AddBlankRight:
+      '. .': {write: '.0.', move: SLS, next: RewindTransitions}
+      
     finish:
       # If we reach here, we have no match, so we halt.
       # We could copy the simulated tape to tape 1 if needed.
