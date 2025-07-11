@@ -10,10 +10,10 @@ source code: |
   #  A second 0 in a row will separate transitions
   #  A third 0 in a row will separate the transitions from the input.
   # Using these rules, the "binary increment" machine with initial input '1011' encodes as
-  # "1110101111010110011101101110110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110".
+  # "11101011110101100111011011101101001110111011101110100111101010111011001111011010111011001111011101111011011000111011011101110".
   
   type: 3tape
-  input: '1110101111010110011101101110110100111011101110111010011110101011101100111011010111011001111011101111011011000111011011101110'
+  input: '11101011110101100111011011101101001110111011101110100111101010111011001111011010111011001111011101111011011000111011011101110'
   blank: ' '
   wild: '.'
   start state: WriteStartState
@@ -90,7 +90,7 @@ source code: |
       '1.1': {move: RSR}
       '0.0': {move: RSL, next: MatchSymbol}
       '1.0': {move: SSL, next: SkipTransition}
-      '0.1': {move: SSR, next: SkipTransition}
+      '0.1': {move: SSS, next: SkipTransition}
       ' ..': {move: LSR, next: finish}
 
     MatchSymbol:
@@ -110,9 +110,11 @@ source code: |
       # Skip to the next transition in tape 1 (00)
       '1..': {move: RSS}
       '0..': {move: RSS, next: SkipTransition1}
+      ' ..': {move: LSR, next: finish}
     SkipTransition1:  
       '1..': {move: RSS, next: SkipTransition}
       '0..': {move: RSS, next: RewindState}
+      ' ..': {move: LSR, next: finish}
 
     ChangeStateRewind:
       # Match found! Rewind state, then copy the next state to tape 3.
@@ -158,7 +160,7 @@ source code: |
     LeftShift0:
       '.1.': {write: '.0.', move: SLS, next: LeftShift1}
       '.0.': {write: '.0.', move: SLS, next: LeftShift0}
-      '. .': {write: '.1.', move: SSS, next: WriteSymbol}
+      '. .': {write: '.0.', move: SSS, next: WriteSymbol}
     LeftShift1:
       '.1.': {write: '.1.', move: SLS, next: LeftShift1}
       '.0.': {write: '.1.', move: SLS, next: LeftShift0}

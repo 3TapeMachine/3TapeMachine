@@ -7,13 +7,13 @@ source code: |
   table:
     # scan to the rightmost digit
     right:
-      1: R
       0: R
+      1: R
       ' '  : {L: carry}
     # then carry the 1
     carry:
-      1      : {write: 0, L}
       0      : {write: 1, L: accept}
+      1      : {write: 0, L}
       ' '    : {write: 1, L: accept}
     accept:
 
