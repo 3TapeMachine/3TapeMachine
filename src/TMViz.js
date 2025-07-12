@@ -95,7 +95,8 @@ export default class TMViz {
       this.machine = new TuringMachine3Tape(
         animatedMultiTapeTransition(graph, animateAndContinue),
         spec.startState,
-        tapes
+        tapes,
+        spec.wild
       );
     } else {
       // Default to a 1-tape machine for all other cases

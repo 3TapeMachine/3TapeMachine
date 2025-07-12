@@ -1,10 +1,11 @@
 import { move } from './tape/Tape.js';
 
 export class TuringMachine3Tape {
-  constructor(transitionFunction, startState, tapes) {
+  constructor(transitionFunction, startState, tapes, wild) {
     this.transitionFunction = transitionFunction;
     this.state = startState;
     this.tapes = tapes;
+    this.wild = wild;
   }
 
   toString() {
@@ -16,9 +17,15 @@ export class TuringMachine3Tape {
     if (instruct == null) return false;
 
     // FIX: Use the instruction format produced by parser.js
-    if (instruct.write1) { this.tapes[0].write(instruct.write1); }
-    if (instruct.write2) { this.tapes[1].write(instruct.write2); }
-    if (instruct.write3) { this.tapes[2].write(instruct.write3); }
+    if (instruct.write1 && instruct.write1 != this.wild) { 
+      this.tapes[0].write(instruct.write1); 
+    }
+    if (instruct.write2 && instruct.write2 != this.wild) { 
+      this.tapes[1].write(instruct.write2); 
+    }
+    if (instruct.write3 && instruct.write3 != this.wild) {
+      this.tapes[2].write(instruct.write3); 
+    }
 
     if (instruct.move1) { move(this.tapes[0], instruct.move1); }
     if (instruct.move2) { move(this.tapes[1], instruct.move2); }
