@@ -164,33 +164,17 @@ const menu = (() => {
     }
     refreshEditMenu();
 
-    // --- BEGIN: Show/hide "my-new-btn" depending on example ---
-    // Only show for examples, except "add binary (3 tape)"
-    const newBtn = document.getElementById('my-new-btn');
-    if (newBtn) {
-      // Check if current doc is an example
-      if (doc.isExample) {
-        // The example name/id to exclude
-        // Try to match by id or name/title
-        // You may need to adjust this check depending on your examples1.js structure
-        // Here, we check both id and name/title for robustness
+    // Show/hide the binary conversion button depending on the loaded example.
+    const binaryConversionBtn = document.getElementById('binary-conversion-btn');
+    if (binaryConversionBtn) {
+        // The ID of the 3-tape example to exclude
         const EXCLUDED_ID = 'add-binary-3-tape';
-        const EXCLUDED_TITLE = 'add binary (3 tape)';
-        const docId = doc.id || '';
-        const docTitle = doc.title || doc.name || '';
-        if (
-          docId.trim().toLowerCase() === EXCLUDED_ID ||
-          docTitle.trim().toLowerCase() === EXCLUDED_TITLE
-        ) {
-          newBtn.style.display = 'none';
+        if (doc.isExample && doc.id !== EXCLUDED_ID) {
+            binaryConversionBtn.style.display = 'inline-block';
         } else {
-          newBtn.style.display = 'inline-block';
+            binaryConversionBtn.style.display = 'none';
         }
-      } else {
-        newBtn.style.display = 'none';
-      }
     }
-    // --- END: Show/hide "my-new-btn" depending on example ---
   };
 
   // Refresh the "Edit" menu items depending on document vs. example.
@@ -237,7 +221,7 @@ const menu = (() => {
       controller.loadEditorSource();
     }
   }
-  
+
   // ***FIX***: Removed incorrect logic that showed the "Rename" dialog
   // for "Duplicate" and "New" actions.
   [
@@ -299,6 +283,59 @@ const menu = (() => {
   document.getElementById('tm-doc-action-resetsave').addEventListener('click', saveReset);
 })();
 
+// =========================================================================
+// ▼▼▼ BINARY CONVERSION FUNCTION ADDED HERE ▼▼▼
+// =========================================================================
+function handleBinaryConversion() {
+  // 1. Define the binary dictionary
+  const binaryMap = {
+    states: { 'right': '111', 'carry': '1111', 'done': '1' },
+    symbols: { ' ': '1', '0': '11', '1': '111' },
+    directions: { 'L': '11', 'R': '1' }
+  };
+
+  // 2. Get the rules from the currently loaded machine
+  const machineRules = controller.simulator.machine.rules;
+
+  if (!machineRules) {
+    alert("Could not find machine rules to convert.");
+    return;
+  }
+
+  // 3. Convert each rule into its binary string format
+  const encodedRules = [];
+  for (const fromState in machineRules) {
+    for (const readSymbol in machineRules[fromState]) {
+      const rule = machineRules[fromState][readSymbol];
+
+      const currentStateCode = binaryMap.states[fromState];
+      const readSymbolCode = binaryMap.symbols[readSymbol];
+      const newStateCode = binaryMap.states[rule.state];
+      const writeSymbolCode = binaryMap.symbols[rule.write];
+      const moveDirectionCode = binaryMap.directions[rule.move];
+
+      // Check if all parts were found in the map before joining
+      if (currentStateCode && readSymbolCode && newStateCode && writeSymbolCode && moveDirectionCode) {
+        encodedRules.push([currentStateCode, readSymbolCode, newStateCode, writeSymbolCode, moveDirectionCode].join('0'));
+      }
+    }
+  }
+
+  // 4. Join all the encoded rules together with '00'
+  const finalBinaryString = encodedRules.join('00');
+
+  // 5. Copy the final string to the clipboard
+  navigator.clipboard.writeText(finalBinaryString).then(() => {
+    alert("Binary code copied to clipboard!");
+  }).catch(err => {
+    console.error('Failed to copy text: ', err);
+    alert("Failed to copy binary code.");
+  });
+}
+// =========================================================================
+// ▲▲▲ END OF NEW FUNCTION ▲▲▲
+// =========================================================================
+
 ////////////////
 // Controller //
 ////////////////
@@ -345,6 +382,17 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ignore */
   }
 });
+
+// =========================================================================
+// ▼▼▼ EVENT LISTENER FOR BINARY BUTTON ADDED HERE ▼▼▼
+// =========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const binaryConversionBtn = document.getElementById('binary-conversion-btn');
+    if (binaryConversionBtn) {
+        binaryConversionBtn.addEventListener('click', handleBinaryConversion);
+    }
+});
+// =========================================================================
 
 window.addEventListener('beforeunload', ev => {
   try {
