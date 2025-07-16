@@ -16,6 +16,8 @@ import 'ace-builds/src-min-noconflict/worker-yaml.js';
 ace.config.set('basePath', '/build/');
 ace.config.set('workerPath', '/build/');
 
+import yaml from 'js-yaml'; // Added for YAML parsing
+
 /**
  * Concat an array of DOM Nodes into a DocumentFragment.
  * @param  {[Node]} array
@@ -379,6 +381,86 @@ window.addEventListener('blur', () => {
     });
   });
 })();
+
+// --- Binary Conversion Logic ---
+const stateDict = {
+  'done': '1',
+  'accept': '1',
+  'halt': '1',
+  'reject': '11',
+  'right': '111',
+  'start': '111',
+  'carry': '1111'
+};
+const symbolDict = {
+  ' ': '1',
+  '0': '11',
+  '1': '111'
+};
+const dirDict = {
+  'R': '1',
+  'L': '11',
+  'S': '111'
+};
+
+function encode(dict, key) {
+  if (typeof key !== 'string') return key;
+  const k = key.trim().toLowerCase();
+  return dict[k] || key;
+}
+
+function convertCurrentTMToBinary() {
+  let src = controller.editor.getValue();
+  let doc;
+  try {
+    doc = yaml.load(src);
+  } catch (e) {
+    addAlertPane('danger', 'Could not parse YAML: ' + e.message);
+    return;
+  }
+  // Accept both 'table' and direct state mapping
+  const table = doc.table || doc;
+  if (!table || typeof table !== 'object') {
+    addAlertPane('danger', 'No transition table found.');
+    return;
+  }
+  let rules = [];
+  for (const [state, transitions] of Object.entries(table)) {
+    if (!transitions || typeof transitions !== 'object') continue;
+    for (const [readSymbol, instr] of Object.entries(transitions)) {
+      let newState = state, writeSymbol = readSymbol, direction = null;
+      if (typeof instr === 'string') {
+        direction = instr;
+      } else if (typeof instr === 'object') {
+        if ('write' in instr) writeSymbol = instr.write;
+        if ('L' in instr) { direction = 'L'; newState = instr.L; }
+        else if ('R' in instr) { direction = 'R'; newState = instr.R; }
+        else if ('S' in instr) { direction = 'S'; newState = instr.S; }
+        else if ('direction' in instr) direction = instr.direction;
+        if ('state' in instr) newState = instr.state;
+      }
+      const encState = encode(stateDict, state);
+      const encRead = encode(symbolDict, readSymbol);
+      const encNewState = encode(stateDict, newState);
+      const encWrite = encode(symbolDict, writeSymbol);
+      const encDir = encode(dirDict, direction);
+      rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
+    }
+  }
+  const result = rules.join('00');
+  navigator.clipboard.writeText(result).then(() => {
+    addAlertPane('success', 'Binary conversion copied to clipboard!');
+  }, () => {
+    addAlertPane('danger', 'Failed to copy to clipboard.');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('my-new-btn');
+  if (btn) {
+    btn.addEventListener('click', convertCurrentTMToBinary);
+  }
+});
 
 // For interaction/debugging
 export { controller };
