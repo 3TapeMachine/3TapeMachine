@@ -167,11 +167,13 @@ const menu = (() => {
     // Show/hide the binary conversion button depending on the loaded example.
     const binaryConversionBtn = document.getElementById('binary-conversion-btn');
     if (binaryConversionBtn) {
-        // The ID of the 3-tape example to exclude
-        const EXCLUDED_ID = 'add-binary-3-tape';
-        if (doc.isExample && doc.id !== EXCLUDED_ID) {
+        const is3TapeExample = (doc.id === 'add-binary-3-tape') || (doc.title.toLowerCase() === 'add binary (3 tape)');
+
+        if (doc.isExample && !is3TapeExample) {
+            // Show button if it IS an example and IS NOT the 3-tape machine
             binaryConversionBtn.style.display = 'inline-block';
         } else {
+            // Hide button in all other cases
             binaryConversionBtn.style.display = 'none';
         }
     }
