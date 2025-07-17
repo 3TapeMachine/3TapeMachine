@@ -384,7 +384,7 @@ window.addEventListener('blur', () => {
 
 // --- Binary Conversion Logic ---
 const stateDict = {
-  'done': '1',
+  //--'done': '1',--
   'accept': '1',
   'halt': '1',
   'reject': '11',
