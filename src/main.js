@@ -383,30 +383,70 @@ window.addEventListener('blur', () => {
 })();
 
 // --- Binary Conversion Logic ---
-const stateDict = {
-  //--'done': '1',--
-  'accept': '1',
-  'halt': '1',
-  'reject': '11',
-  'right': '111',
-  'start': '111',
-  'carry': '1111'
-};
-const symbolDict = {
-  ' ': '1',
-  '0': '11',
-  '1': '111'
-};
+
 const dirDict = {
   'R': '1',
   'L': '11',
   'S': '111'
 };
 
+// Dynamically generate stateDict and symbolDict based on the current transition table
+function generateDictionaries(table) {
+  // Always include these special states
+  const stateDict = {
+    'accept': '1',
+    'halt': '1',
+    'reject': '11'
+  };
+  const symbolDict = {};
+
+  // Collect all states and symbols
+  const states = new Set();
+  const symbols = new Set();
+
+  for (const [state, transitions] of Object.entries(table)) {
+    if (!stateDict[state]) states.add(state);
+    if (transitions && typeof transitions === 'object') {
+      for (const [readSymbol, instr] of Object.entries(transitions)) {
+        symbols.add(readSymbol);
+        if (typeof instr === 'object') {
+          if ('write' in instr) symbols.add(instr.write);
+          // Check for next state in L/R/S keys or 'state'
+          if ('L' in instr && !stateDict[instr.L]) states.add(instr.L);
+          if ('R' in instr && !stateDict[instr.R]) states.add(instr.R);
+          if ('S' in instr && !stateDict[instr.S]) states.add(instr.S);
+          if ('state' in instr && !stateDict[instr.state]) states.add(instr.state);
+        }
+      }
+    }
+  }
+
+  // Assign binary codes to states (after reserved ones)
+  let code = 111;
+  for (const s of states) {
+    stateDict[s] = '1'.repeat(code);
+    code++;
+  }
+
+  // Assign binary codes to symbols
+  let symCode = 1;
+  for (const sym of symbols) {
+    // Blank symbol is always '1'
+    if (sym.trim() === '') {
+      symbolDict[sym] = '1';
+      continue;
+    }
+    symbolDict[sym] = '1'.repeat(symCode + 1);
+    symCode++;
+  }
+
+  return { stateDict, symbolDict };
+}
+
 function encode(dict, key) {
   if (typeof key !== 'string') return key;
-  const k = key.trim().toLowerCase();
-  return dict[k] || key;
+  const k = key.trim();
+  return dict[k] || dict[k.toLowerCase()] || key;
 }
 
 function convertCurrentTMToBinary() {
@@ -424,6 +464,10 @@ function convertCurrentTMToBinary() {
     addAlertPane('danger', 'No transition table found.');
     return;
   }
+
+  // Generate dictionaries dynamically
+  const { stateDict, symbolDict } = generateDictionaries(table);
+
   let rules = [];
   for (const [state, transitions] of Object.entries(table)) {
     if (!transitions || typeof transitions !== 'object') continue;
