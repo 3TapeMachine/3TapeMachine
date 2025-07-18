@@ -405,17 +405,17 @@ function generateDictionaries(table) {
   const symbols = new Set();
 
   for (const [state, transitions] of Object.entries(table)) {
-    if (!stateDict[state]) states.add(state);
+    if (typeof state === 'string' && !stateDict[state]) states.add(state);
     if (transitions && typeof transitions === 'object') {
       for (const [readSymbol, instr] of Object.entries(transitions)) {
-        symbols.add(readSymbol);
+        if (typeof readSymbol === 'string') symbols.add(readSymbol);
         if (typeof instr === 'object') {
-          if ('write' in instr) symbols.add(instr.write);
+          if ('write' in instr && typeof instr.write === 'string') symbols.add(instr.write);
           // Check for next state in L/R/S keys or 'state'
-          if ('L' in instr && !stateDict[instr.L]) states.add(instr.L);
-          if ('R' in instr && !stateDict[instr.R]) states.add(instr.R);
-          if ('S' in instr && !stateDict[instr.S]) states.add(instr.S);
-          if ('state' in instr && !stateDict[instr.state]) states.add(instr.state);
+          if ('L' in instr && typeof instr.L === 'string' && !stateDict[instr.L]) states.add(instr.L);
+          if ('R' in instr && typeof instr.R === 'string' && !stateDict[instr.R]) states.add(instr.R);
+          if ('S' in instr && typeof instr.S === 'string' && !stateDict[instr.S]) states.add(instr.S);
+          if ('state' in instr && typeof instr.state === 'string' && !stateDict[instr.state]) states.add(instr.state);
         }
       }
     }
@@ -431,6 +431,7 @@ function generateDictionaries(table) {
   // Assign binary codes to symbols
   let symCode = 1;
   for (const sym of symbols) {
+    if (typeof sym !== 'string') continue;
     // Blank symbol is always '1'
     if (sym.trim() === '') {
       symbolDict[sym] = '1';
