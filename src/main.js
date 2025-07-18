@@ -421,33 +421,34 @@ function generateDictionaries(table) {
     }
   }
 
-  // Assign binary codes to states (after reserved ones)
-  let code = 111;
+  // Assign binary codes to states (after reserved ones), max 6 ones
+  let code = 3; // '111' (since '1' and '11' are reserved)
   for (const s of states) {
+    if (code > 6) code = 3; // wrap if more than 6 ones
     stateDict[s] = '1'.repeat(code);
     code++;
   }
 
-  // Assign binary codes to symbols
-  let symCode = 1;
+  // Assign binary codes to symbols, max 6 ones
+  let symCode = 2; // '11' (since '1' is reserved for blank)
   for (const sym of symbols) {
     if (typeof sym !== 'string') continue;
-    // Blank symbol is always '1'
     if (sym.trim() === '') {
       symbolDict[sym] = '1';
       continue;
     }
-    symbolDict[sym] = '1'.repeat(symCode + 1);
+    if (symCode > 6) symCode = 2; // wrap if more than 6 ones
+    symbolDict[sym] = '1'.repeat(symCode);
     symCode++;
   }
 
   return { stateDict, symbolDict };
 }
 
-function encode(dict, key) {
-  if (typeof key !== 'string') return key;
+function encode(dict, key, fallback) {
+  if (typeof key !== 'string') return fallback;
   const k = key.trim();
-  return dict[k] || dict[k.toLowerCase()] || key;
+  return dict[k] || dict[k.toLowerCase()] || fallback;
 }
 
 function convertCurrentTMToBinary() {
@@ -472,25 +473,31 @@ function convertCurrentTMToBinary() {
   let rules = [];
   for (const [state, transitions] of Object.entries(table)) {
     if (!transitions || typeof transitions !== 'object') continue;
+    let prevStateEnc = encode(stateDict, state, '1');
     for (const [readSymbol, instr] of Object.entries(transitions)) {
       let newState = state, writeSymbol = readSymbol, direction = null;
+      let prevSymbolEnc = encode(symbolDict, readSymbol, '1');
       if (typeof instr === 'string') {
         direction = instr;
       } else if (typeof instr === 'object') {
-        if ('write' in instr) writeSymbol = instr.write;
-        if ('L' in instr) { direction = 'L'; newState = instr.L; }
-        else if ('R' in instr) { direction = 'R'; newState = instr.R; }
-        else if ('S' in instr) { direction = 'S'; newState = instr.S; }
-        else if ('direction' in instr) direction = instr.direction;
-        if ('state' in instr) newState = instr.state;
+        if ('write' in instr && typeof instr.write === 'string') writeSymbol = instr.write;
+        if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
+        else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
+        else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
+        else if ('direction' in instr && typeof instr.direction === 'string') direction = instr.direction;
+        if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
-      const encState = encode(stateDict, state);
-      const encRead = encode(symbolDict, readSymbol);
-      const encNewState = encode(stateDict, newState);
-      const encWrite = encode(symbolDict, writeSymbol);
-      const encDir = encode(dirDict, direction);
+      // If newState or writeSymbol is missing, repeat previous encoding
+      const encState = encode(stateDict, state, prevStateEnc);
+      const encRead = encode(symbolDict, readSymbol, prevSymbolEnc);
+      const encNewState = encode(stateDict, newState, encState);
+      const encWrite = encode(symbolDict, writeSymbol, encRead);
+      const encDir = encode(dirDict, direction, '1');
       rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
+      prevStateEnc = encNewState;
+      prevSymbolEnc = encWrite;
     }
+    rules.push('0'); // extra 0 to signify end of rules for this example
   }
   const result = rules.join('00');
   navigator.clipboard.writeText(result).then(() => {
