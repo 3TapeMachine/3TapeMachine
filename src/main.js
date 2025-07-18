@@ -451,6 +451,8 @@ function encode(dict, key, fallback) {
   return dict[k] || dict[k.toLowerCase()] || fallback;
 }
 
+// ...existing code...
+
 function convertCurrentTMToBinary() {
   let src = controller.editor.getValue();
   let doc;
@@ -474,9 +476,10 @@ function convertCurrentTMToBinary() {
   for (const [state, transitions] of Object.entries(table)) {
     if (!transitions || typeof transitions !== 'object') continue;
     let prevStateEnc = encode(stateDict, state, '1');
+    let prevSymbolEnc = null;
     for (const [readSymbol, instr] of Object.entries(transitions)) {
+      // Determine newState, writeSymbol, direction
       let newState = state, writeSymbol = readSymbol, direction = null;
-      let prevSymbolEnc = encode(symbolDict, readSymbol, '1');
       if (typeof instr === 'string') {
         direction = instr;
       } else if (typeof instr === 'object') {
@@ -487,13 +490,16 @@ function convertCurrentTMToBinary() {
         else if ('direction' in instr && typeof instr.direction === 'string') direction = instr.direction;
         if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
-      // If newState or writeSymbol is missing, repeat previous encoding
-      const encState = encode(stateDict, state, prevStateEnc);
-      const encRead = encode(symbolDict, readSymbol, prevSymbolEnc);
+
+      // Repeat previous encoding if not specified
+      const encState = encode(stateDict, state, prevStateEnc || '1');
+      const encRead = encode(symbolDict, readSymbol, prevSymbolEnc || '1');
       const encNewState = encode(stateDict, newState, encState);
       const encWrite = encode(symbolDict, writeSymbol, encRead);
       const encDir = encode(dirDict, direction, '1');
+
       rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
+
       prevStateEnc = encNewState;
       prevSymbolEnc = encWrite;
     }
@@ -506,13 +512,6 @@ function convertCurrentTMToBinary() {
     addAlertPane('danger', 'Failed to copy to clipboard.');
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('my-new-btn');
-  if (btn) {
-    btn.addEventListener('click', convertCurrentTMToBinary);
-  }
-});
 
 // For interaction/debugging
 export { controller };
