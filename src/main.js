@@ -513,5 +513,13 @@ function convertCurrentTMToBinary() {
   });
 }
 
+// --- Attach binary conversion to button after DOM is ready ---
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('my-new-btn');
+  if (btn) {
+    btn.addEventListener('click', convertCurrentTMToBinary);
+  }
+});
+
 // For interaction/debugging
 export { controller };
