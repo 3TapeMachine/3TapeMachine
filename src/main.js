@@ -522,12 +522,11 @@ function convertCurrentTMToBinary() {
   let input = doc.input || '';
   let binaryInput = '';
   if (input) {
-    // If already binary (only 1s and 0s), keep as is, else encode
     binaryInput = convertInputToBinary(input, symbolDict);
   }
 
   // Compose the final encoding
-  // Use '00' between rules, '0000' at the end, and input as the last part
+  // Use '00' between rules, '00' between last rule and input, and '0000' at the end
   let result = rules.join('00');
   if (binaryInput) {
     result += '00' + binaryInput;
