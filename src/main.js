@@ -531,7 +531,7 @@ function convertCurrentTMToBinary() {
   if (binaryInput) {
     result += '00' + binaryInput;
   }
-  result += '00';
+  result += '0000';
 
   navigator.clipboard.writeText(result).then(() => {
     addAlertPane('success', 'Binary conversion copied to clipboard!');
