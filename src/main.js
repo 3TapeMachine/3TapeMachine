@@ -529,7 +529,7 @@ function convertCurrentTMToBinary() {
   // Use '00' between rules, '00' between last rule and input, and '0000' at the end
   let result = rules.join('00');
   if (binaryInput) {
-    result += ' ' + binaryInput;
+    result += '00' + binaryInput;
   }
   result += '0000';
 
