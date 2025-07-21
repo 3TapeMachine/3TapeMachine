@@ -453,6 +453,18 @@ function encode(dict, key, fallback) {
 
 // ...existing code...
 
+function convertInputToBinary(input, symbolDict) {
+  // If input is already in binary (only 1s and 0s), return as is
+  if (/^[01]+$/.test(input)) return input;
+  // Otherwise, encode each symbol using symbolDict and join with '0'
+  let result = [];
+  for (const ch of input) {
+    // Use symbolDict or fallback to '1' (blank)
+    result.push(symbolDict[ch] || '1');
+  }
+  return result.join('0');
+}
+
 function convertCurrentTMToBinary() {
   let src = controller.editor.getValue();
   let doc;
@@ -505,7 +517,23 @@ function convertCurrentTMToBinary() {
     }
     rules.push('0'); // extra 0 to signify end of rules for this example
   }
-  const result = rules.join('00');
+
+  // Handle input encoding
+  let input = doc.input || '';
+  let binaryInput = '';
+  if (input) {
+    // If already binary (only 1s and 0s), keep as is, else encode
+    binaryInput = convertInputToBinary(input, symbolDict);
+  }
+
+  // Compose the final encoding
+  // Use '00' between rules, '0000' at the end, and input as the last part
+  let result = rules.join('00');
+  if (binaryInput) {
+    result += '00' + binaryInput;
+  }
+  result += '0000';
+
   navigator.clipboard.writeText(result).then(() => {
     addAlertPane('success', 'Binary conversion copied to clipboard!');
   }, () => {
