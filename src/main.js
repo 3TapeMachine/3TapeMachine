@@ -166,24 +166,14 @@ const menu = (() => {
     }
     refreshEditMenu();
 
-    // --- BEGIN: Show/hide "my-new-btn" depending on example ---
-    // Only show for examples, except "add binary (3 tape)"
+    // --- BEGIN: Show/hide "my-new-btn" depending on example and type ---
+    // Only show for examples, except those with type: 3tape
     const newBtn = document.getElementById('my-new-btn');
     if (newBtn) {
-      // Check if current doc is an example
       if (doc.isExample) {
-        // The example name/id to exclude
-        // Try to match by id or name/title
-        // You may need to adjust this check depending on your examples1.js structure
-        // Here, we check both id and name/title for robustness
-        const EXCLUDED_ID = 'add-binary-3-tape';
-        const EXCLUDED_TITLE = 'add binary (3 tape)';
-        const docId = doc.id || '';
-        const docTitle = doc.title || doc.name || '';
-        if (
-          docId.trim().toLowerCase() === EXCLUDED_ID ||
-          docTitle.trim().toLowerCase() === EXCLUDED_TITLE
-        ) {
+        // Hide if type is 3tape (case-insensitive)
+        const docType = (doc.type || '').toString().trim().toLowerCase();
+        if (docType === '3tape') {
           newBtn.style.display = 'none';
         } else {
           newBtn.style.display = 'inline-block';
@@ -192,7 +182,7 @@ const menu = (() => {
         newBtn.style.display = 'none';
       }
     }
-    // --- END: Show/hide "my-new-btn" depending on example ---
+    // --- END: Show/hide "my-new-btn" depending on example and type ---
   };
 
   // Refresh the "Edit" menu items depending on document vs. example.
