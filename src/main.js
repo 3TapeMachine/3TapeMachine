@@ -152,6 +152,34 @@ const menu = (() => {
 // "Edit" Menu //
 /////////////////
 
+// --- BEGIN: Binary Button Visibility Logic ---
+function updateBinaryButtonVisibility() {
+  const newBtn = document.getElementById('my-new-btn');
+  if (!newBtn) return;
+  // Only show for examples
+  if (!menu.currentDocument.isExample) {
+    newBtn.style.display = 'none';
+    return;
+  }
+  // Parse YAML from editor to check for type: 3tape
+  let src = controller.editor.getValue();
+  let doc;
+  try {
+    doc = yaml.load(src);
+  } catch {
+    // If YAML is invalid, hide the button
+    newBtn.style.display = 'none';
+    return;
+  }
+  const docType = (doc && doc.type || '').toString().trim().toLowerCase();
+  if (docType === '3tape') {
+    newBtn.style.display = 'none';
+  } else {
+    newBtn.style.display = 'inline-block';
+  }
+}
+// --- END: Binary Button Visibility Logic ---
+
 (() => {
   menu.onChange = (doc, opts) => {
     switch (opts && opts.type) {
@@ -165,24 +193,7 @@ const menu = (() => {
         controller.openDocument(doc);
     }
     refreshEditMenu();
-
-    // --- BEGIN: Show/hide "my-new-btn" depending on example and type ---
-    // Only show for examples, except those with type: 3tape
-    const newBtn = document.getElementById('my-new-btn');
-    if (newBtn) {
-      if (doc.isExample) {
-        // Hide if type is 3tape (case-insensitive)
-        const docType = (doc.type || '').toString().trim().toLowerCase();
-        if (docType === '3tape') {
-          newBtn.style.display = 'none';
-        } else {
-          newBtn.style.display = 'inline-block';
-        }
-      } else {
-        newBtn.style.display = 'none';
-      }
-    }
-    // --- END: Show/hide "my-new-btn" depending on example and type ---
+    updateBinaryButtonVisibility(); // <-- Call here
   };
 
   // Refresh the "Edit" menu items depending on document vs. example.
