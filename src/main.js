@@ -424,15 +424,15 @@ function generateDictionaries(table) {
     }
   }
 
-  // Assign binary codes to states (after reserved ones), max 6 ones
+  // Assign binary codes to states (after reserved ones)
   let code = 3; // '111' (since '1' and '11' are reserved)
   for (const s of states) {
-    if (code > 6) code = 3; // wrap if more than 6 ones
+    // The line that caused wrapping has been removed.
     stateDict[s] = '1'.repeat(code);
     code++;
   }
 
-  // Assign binary codes to symbols, max 6 ones
+  // Assign binary codes to symbols
   let symCode = 2; // '11' (since '1' is reserved for blank)
   for (const sym of symbols) {
     if (typeof sym !== 'string') continue;
@@ -440,7 +440,7 @@ function generateDictionaries(table) {
       symbolDict[sym] = '1';
       continue;
     }
-    if (symCode > 6) symCode = 2; // wrap if more than 6 ones
+    // The line that caused wrapping has been removed.
     symbolDict[sym] = '1'.repeat(symCode);
     symCode++;
   }
