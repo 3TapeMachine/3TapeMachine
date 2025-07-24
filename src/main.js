@@ -530,7 +530,7 @@ function convertCurrentTMToBinary() {
   // Use '00' between rules, '000' between last rule and input, and NO trailing zeros
   let result = rules.join('00');
   if (binaryInput) {
-    result += '' + binaryInput;
+    result += '0' + binaryInput;
   }
 
   navigator.clipboard.writeText(result).then(() => {
