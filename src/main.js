@@ -516,7 +516,7 @@ function convertCurrentTMToBinary() {
       prevStateEnc = encNewState;
       prevSymbolEnc = encWrite;
     }
-    rules.push('0'); // extra 0 to signify end of rules for this example
+    //rules.push('0'); // extra 0 to signify end of rules for this example
   }
 
   // Handle input encoding
@@ -530,7 +530,7 @@ function convertCurrentTMToBinary() {
   // Use '00' between rules, '000' between last rule and input, and NO trailing zeros
   let result = rules.join('00');
   if (binaryInput) {
-    result += '0' + binaryInput;
+    result += '000' + binaryInput;
   }
 
   navigator.clipboard.writeText(result).then(() => {
