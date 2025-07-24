@@ -507,8 +507,8 @@ function convertCurrentTMToBinary() {
       // Repeat previous encoding if not specified
       const encState = encode(stateDict, state, prevStateEnc || '1');
       const encRead = encode(symbolDict, readSymbol, prevSymbolEnc || '1');
-      const encNewState = encode(stateDict, newState, encState);
-      const encWrite = encode(symbolDict, writeSymbol, encRead);
+      const encNewState = encode(stateDict, newState, prevStateEnc);
+      const encWrite = encode(symbolDict, writeSymbol, prevSymbolEnc);
       const encDir = encode(dirDict, direction, '1');
 
       rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
