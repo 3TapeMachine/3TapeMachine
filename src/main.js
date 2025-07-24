@@ -385,6 +385,8 @@ window.addEventListener('blur', () => {
 
 // --- Binary Conversion Logic ---
 
+// --- Binary Conversion Logic ---
+
 const dirDict = {
   'R': '1',
   'L': '11',
@@ -455,9 +457,7 @@ function encode(dict, key, fallback) {
 // ...existing code...
 
 function convertInputToBinary(input, symbolDict) {
-  // If input is already in binary (only 1s and 0s), return as is
-  if (/^[01]+$/.test(input)) return input;
-  // Otherwise, encode each symbol using symbolDict and join with '0'
+  // Always encode input using symbolDict and join with '0'
   let result = [];
   for (const ch of input) {
     // Use symbolDict or fallback to '1' (blank)
@@ -527,12 +527,11 @@ function convertCurrentTMToBinary() {
   }
 
   // Compose the final encoding
-  // Use '00' between rules, '00' between last rule and input, and '0000' at the end
+  // Use '00' between rules, '000' between last rule and input, and NO trailing zeros
   let result = rules.join('00');
   if (binaryInput) {
-    result += '00' + binaryInput;
+    result += '000' + binaryInput;
   }
-  result += '0000';
 
   navigator.clipboard.writeText(result).then(() => {
     addAlertPane('success', 'Binary conversion copied to clipboard!');
