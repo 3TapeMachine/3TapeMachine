@@ -467,6 +467,7 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 function convertCurrentTMToBinary() {
+  function convertCurrentTMToBinary() {
   let src = controller.editor.getValue();
   let doc;
   try {
@@ -488,11 +489,14 @@ function convertCurrentTMToBinary() {
   let rules = [];
   for (const [state, transitions] of Object.entries(table)) {
     if (!transitions || typeof transitions !== 'object') continue;
-    let prevStateEnc = encode(stateDict, state, '1');
-    let prevSymbolEnc = null;
+    
     for (const [readSymbol, instr] of Object.entries(transitions)) {
-      // Determine newState, writeSymbol, direction
-      let newState = state, writeSymbol = readSymbol, direction = null;
+      // Determine newState, writeSymbol, and direction based on standard TM logic.
+      // If a value is missing, it defaults to the current state/symbol.
+      let newState = state;
+      let writeSymbol = readSymbol;
+      let direction = null;
+
       if (typeof instr === 'string') {
         direction = instr;
       } else if (typeof instr === 'object') {
@@ -504,19 +508,15 @@ function convertCurrentTMToBinary() {
         if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
 
-      // Repeat previous encoding if not specified
-      const encState = encode(stateDict, state, prevStateEnc || '1');
-      const encRead = encode(symbolDict, readSymbol, prevSymbolEnc || '1');
-      const encNewState = encode(stateDict, newState, prevStateEnc);
-      const encWrite = encode(symbolDict, writeSymbol, prevSymbolEnc);
+      // Encode the parts. The logic no longer needs to track the "previous" rule.
+      const encState = encode(stateDict, state, '1');
+      const encRead = encode(symbolDict, readSymbol, '1');
+      const encNewState = encode(stateDict, newState, encState); // Fallback to the current state's encoding
+      const encWrite = encode(symbolDict, writeSymbol, encRead); // Fallback to the read symbol's encoding
       const encDir = encode(dirDict, direction, '1');
 
       rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
-
-      prevStateEnc = encNewState;
-      prevSymbolEnc = encWrite;
     }
-    //rules.push('0'); // extra 0 to signify end of rules for this example
   }
 
   // Handle input encoding
@@ -527,7 +527,6 @@ function convertCurrentTMToBinary() {
   }
 
   // Compose the final encoding
-  // Use '00' between rules, '000' between last rule and input, and NO trailing zeros
   let result = rules.join('00');
   if (binaryInput) {
     result += '000' + binaryInput;
