@@ -467,7 +467,6 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 function convertCurrentTMToBinary() {
-  function convertCurrentTMToBinary() {
   let src = controller.editor.getValue();
   let doc;
   try {
