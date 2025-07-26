@@ -62,7 +62,7 @@ source code: |
     BlankInput:
       '...': {write: '.1.', move: SRS, next: BlankInput1}
     BlankInput1:
-      '...': {write: '.0.', move: SLS, next: RewindTransitions}
+      '...': {write: '.0.', move: LLS, next: RewindTransitions}
 
     CopyInput:
       '1..': {write: ' 1.', move: RRS}
