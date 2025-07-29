@@ -49,7 +49,7 @@ export default function (env = {}) {
       new CopyPlugin({
         patterns: [
           { from: 'node_modules/ace-builds/src-min-noconflict/worker-*.js',
-            to: 'build/[name][ext]'     
+            to: '[name][ext]'     
           }
         ]
       }),

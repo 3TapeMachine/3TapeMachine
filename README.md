@@ -5,11 +5,10 @@ This is a [Turing machine] visualizer designed for learning through visual think
 Machines are described in a simple YAML-based format.
 As you code, each save updates the state diagram; this offers the speed and directness of code, combined with the visual intuitiveness of a graphical editor.
 
-Multiple example machines are provided, each one with commentary that touches on concepts like subroutines and inductive definitions / recursion.
-Many examples include exercises that build on the machines and deepen understanding.
+Multiple example machines are provided, many of which include exercises that build on the machines and deepen understanding.
 To encourage experimentation, the document system provides for quick snapshots and autosaving to browser local storage.
 
-All in all, this is the simulator I wish I had when taking automata theory.
+All in all, this is the simulator I (Andy Li) wish I had when taking automata theory.
 At the same time, I’ve tried to make it accessible to people who aren’t in computer science, or haven’t heard of a Turing machine before.
 
 
