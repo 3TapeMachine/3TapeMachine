@@ -395,26 +395,21 @@ const dirDict = {
 
 // Dynamically generate stateDict and symbolDict based on the current transition table
 function generateDictionaries(table) {
-  // Always include these special states
-  const stateDict = {
-    'accept': '1',
-    'halt': '1',
-    'reject': '11'
-  };
+  const stateDict = { 'accept': '1', 'halt': '1', 'reject': '11' };
   const symbolDict = {};
-
-  // Collect all states and symbols
   const states = new Set();
   const symbols = new Set();
+  const reservedKeys = ['input', 'blank', 'start state', 'table']; // Define keys to ignore
 
   for (const [state, transitions] of Object.entries(table)) {
+    if (reservedKeys.includes(state)) continue; // FIX: Skip non-state keys
+
     if (typeof state === 'string' && !stateDict[state]) states.add(state);
     if (transitions && typeof transitions === 'object') {
       for (const [readSymbol, instr] of Object.entries(transitions)) {
         if (typeof readSymbol === 'string') symbols.add(readSymbol);
         if (typeof instr === 'object') {
           if ('write' in instr && typeof instr.write === 'string') symbols.add(instr.write);
-          // Check for next state in L/R/S keys or 'state'
           if ('L' in instr && typeof instr.L === 'string' && !stateDict[instr.L]) states.add(instr.L);
           if ('R' in instr && typeof instr.R === 'string' && !stateDict[instr.R]) states.add(instr.R);
           if ('S' in instr && typeof instr.S === 'string' && !stateDict[instr.S]) states.add(instr.S);
@@ -424,30 +419,30 @@ function generateDictionaries(table) {
     }
   }
 
-  // Assign binary codes to states (after reserved ones)
-  let code = 3; // '111' (since '1' and '11' are reserved)
+  // Assign binary codes to states
+  let code = 3;
   for (const s of states) {
-    // The line that caused wrapping has been removed.
     stateDict[s] = '1'.repeat(code);
     code++;
   }
 
   // Assign binary codes to symbols
-  let symCode = 2; // '11' (since '1' is reserved for blank)
+  let symCode = 2;
   for (const sym of symbols) {
     if (typeof sym !== 'string') continue;
     if (sym.trim() === '') {
       symbolDict[sym] = '1';
       continue;
     }
-    // The line that caused wrapping has been removed.
     symbolDict[sym] = '1'.repeat(symCode);
     symCode++;
   }
-
   return { stateDict, symbolDict };
 }
 
+//Encoding function for state and symbol dictionaries
+// This function encodes a key using the provided dictionary, falling back to a default value if the key is not found.
+// It trims the key and checks both the original and lowercase versions for a match.
 function encode(dict, key, fallback) {
   if (typeof key !== 'string') return fallback;
   const k = key.trim();
@@ -469,28 +464,24 @@ function convertInputToBinary(input, symbolDict) {
 function convertCurrentTMToBinary() {
   let src = controller.editor.getValue();
   let doc;
-  try {
-    doc = yaml.load(src);
-  } catch (e) {
-    addAlertPane('danger', 'Could not parse YAML: ' + e.message);
-    return;
-  }
-  // Accept both 'table' and direct state mapping
+  try { doc = yaml.load(src); } 
+  catch (e) { addAlertPane('danger', 'Could not parse YAML: ' + e.message); return; }
+
   const table = doc.table || doc;
   if (!table || typeof table !== 'object') {
     addAlertPane('danger', 'No transition table found.');
     return;
   }
 
-  // Generate dictionaries dynamically
   const { stateDict, symbolDict } = generateDictionaries(table);
+  const reservedKeys = ['input', 'blank', 'start state', 'table']; // Define keys to ignore
 
   let rules = [];
   for (const [state, transitions] of Object.entries(table)) {
+    if (reservedKeys.includes(state)) continue; // FIX: Skip non-state keys
     if (!transitions || typeof transitions !== 'object') continue;
     
     for (const [readSymbol, instr] of Object.entries(transitions)) {
-      // Determine newState, writeSymbol, and direction based on standard TM logic.
       let newState = state;
       let writeSymbol = readSymbol;
       let direction = null;
@@ -506,30 +497,25 @@ function convertCurrentTMToBinary() {
         if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
 
-      // Encode the parts
       const encState = encode(stateDict, state, '1');
       const encRead = encode(symbolDict, readSymbol, '1');
       const encNewState = encode(stateDict, newState, encState);
       const encWrite = encode(symbolDict, writeSymbol, encRead);
       const encDir = encode(dirDict, direction, '1');
-
       rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
     }
   }
 
-  // Handle input encoding
   let input = doc.input || '';
   let binaryInput = '';
   if (input) {
     binaryInput = convertInputToBinary(input, symbolDict);
   }
 
-  // Compose the final encoding with the new logic
   let result = rules.join('00');
-  result += '000'; // Always add the end-of-table marker
-
+  result += '000'; 
   if (binaryInput) {
-    result += binaryInput; // Then, add the input if it exists
+    result += binaryInput;
   }
 
   navigator.clipboard.writeText(result).then(() => {
