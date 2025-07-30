@@ -385,8 +385,6 @@ window.addEventListener('blur', () => {
 
 // --- Binary Conversion Logic ---
 
-// --- Binary Conversion Logic ---
-
 const dirDict = {
   'R': '1',
   'L': '11',
