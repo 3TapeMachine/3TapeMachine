@@ -56,7 +56,7 @@ export function get(docID) {
 }
 
 export const list= examplePairs.map(([, doc]) => doc);
-export const firsttimeDocID = 'adder3Tape';//'binaryIncrement';
+export const firsttimeDocID = 'binaryIncrement';
 export const blankTemplate = parseDocument(_template1Tape);
 
 export default { list, firsttimeDocID, blankTemplate };

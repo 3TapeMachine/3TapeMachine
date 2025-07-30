@@ -1,21 +1,21 @@
 {
   "name": "three-tape-tm",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Turing machine visualization and simulator with three tapes.",
   "homepage": "https://github.com/3TapeMachine/3TapeMachine",
   "license": "BSD-3-Clause",
   "contributors": [
     {
-      "name": "Andy Li",
-      "email": "andy.srs.li@gmail.com"
+      "name": "Billy Harris",
+      "email": "billy.harris@sfasu.edu"
     },
     {
       "name": "Samyek Ofori-Addo",
       "email": "oforiadds@jacks.sfasu.edu"
     },
     {
-      "name": "Billy Harris",
-      "email": "billy.harris@sfasu.edu"
+      "name": "Andy Li",
+      "email": "andy.srs.li@gmail.com"
     }
   ],
   "repository": "github:3TapeMachine/3TapeMachine",

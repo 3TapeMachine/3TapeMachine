@@ -70,7 +70,7 @@ function generateGist(container, button, filename, contents) {
   return createGist(payload).then(response => {
     // Show link on success
     const id = response.id;
-    showGeneratedGist(container, `http://localhost:8080/?import-gist=${id}`);
+    showGeneratedGist(container, `http://3tapeturing:8080/?import-gist=${id}`);
   }).catch(reason => {
     // Alert error on failure
     const xhr = reason.xhr;

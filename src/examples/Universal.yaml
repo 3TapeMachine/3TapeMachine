@@ -1,17 +1,24 @@
 name: U (Universal Turing Machine)
 source code: |
+  # The Universal Turing Machine (U) can simulate any other Turing machine. This intuitively supports
+  # the Church-Turing thesis, which states that any computation can be performed by a Turing machine. Also
+  # understanding the idea of U helps understand the stored program concept, which is the basis of modern computers
+  # including interpreters and compilers.
+  #
   # The specific coding for the input works by first encoding the transitons, then the simulated input.
   # Specifically: 
   #      Input state (three 1s for the initial state, four 1s for the next state, etc.) followed by a 0.
   #      Input symbol (single 1 for blank, two 1s for the first non-blank symbol, etc.) followed by a 0.
   #      Next state (one 1 or two 1s for halting states, h_a and h_r) followed by a 0.
-  #      Wrte sybol followed by a 0.
+  #      Write sybol followed by a 0.
   #      Move direction (one 1 for left, two 1s for right, three 1s for stay) followed by a 0.
   #  A second 0 in a row will separate transitions
   #  A third 0 in a row will separate the transitions from the input.
-  # Using these rules, the "binary increment" machine with initial input '1011' encodes as
+  # Using these rules, the "binary increment" machine with initial input '1011' could be encoded as
   # "11101011110101100111011011101101001110111011101110100111101010111011001111011010111011001111011101111011011000111011011101110".
-  
+  # Note that the exact translation from "state name" to 1111s could legaly vary as long as the states are consistent 
+  # within a given encoding.
+
   type: 3tape
   input: '11101011110101100111011011101101001110111011101110100111101010111011001111011010111011001111011101111011011000111011011101110'
   blank: ' '
@@ -45,7 +52,8 @@ source code: |
 
     
   # Initialize, part2: Copy the input tape to tape 2. 3 0s in a row mark the start of input
-  # A blank prior to 3 0s indicate no input (blank tape)
+  # A blank prior to 3 0s indicate no input (blank tape). 
+  # Note that the input might or might not end with a 0 -- if not we add one after copying.
     SkipToInput:
       '1..': {move: RSS}
       '0..': {move: RSS, next: SkipToInput1}
@@ -56,17 +64,27 @@ source code: |
       ' ..': {next: BlankInput}
     SkipToInput2:
       '1..': {move: RSS, next: SkipToInput}
-      '0..': {move: RSS, next: CopyInput}
+      '0..': {move: RSS, next: CopyInputStart}
       ' ..': {next: BlankInput}
 
     BlankInput:
       '...': {write: '.1.', move: SRS, next: BlankInput1}
     BlankInput1:
-      '...': {write: '.0.', move: SLS, next: RewindTransitions}
+      '...': {write: '.0.', move: LLS, next: RewindTransitions}
 
-    CopyInput:
+    CopyInputStart:
+      '1..': {write: ' 1.', move: RRS, next: CopyInput1}
+      '0..': {write: ' 0.', move: RRS, next: CopyInput0}
+      ' ..': {next: BlankInput}
+
+    CopyInput1:
       '1..': {write: ' 1.', move: RRS}
-      '0..': {write: ' 0.', move: RRS}
+      '0..': {write: ' 0.', move: RRS, next: CopyInput0}
+      ' ..': {write: ' 0.', move: LSS, next: RewindInput}
+
+    CopyInput0:
+      '1..': {write: ' 1.', move: RRS, next: CopyInput1}
+      '0..': {write: ' 0.', move: RRS}   # Two zeros in a row??
       ' ..': {move: LLS, next: RewindInput}
 
     RewindInput:
@@ -217,7 +235,7 @@ positions:
   SkipToInput2: {x: 310, y: 260}
   BlankInput: {x: 300, y: 200}
   BlankInput1: {x: 305, y: 200}
-  CopyInput: {x: 300, y: 210}
+  CopyInputStart: {x: 300, y: 210}
   RewindInput: {x: 305, y: 210}
   RewindState: {x: 325, y: 300}
   RewindTransitions: {x: 330, y: 300}
