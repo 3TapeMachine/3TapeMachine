@@ -491,7 +491,6 @@ function convertCurrentTMToBinary() {
     
     for (const [readSymbol, instr] of Object.entries(transitions)) {
       // Determine newState, writeSymbol, and direction based on standard TM logic.
-      // If a value is missing, it defaults to the current state/symbol.
       let newState = state;
       let writeSymbol = readSymbol;
       let direction = null;
@@ -507,11 +506,11 @@ function convertCurrentTMToBinary() {
         if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
 
-      // Encode the parts. The logic no longer needs to track the "previous" rule.
+      // Encode the parts
       const encState = encode(stateDict, state, '1');
       const encRead = encode(symbolDict, readSymbol, '1');
-      const encNewState = encode(stateDict, newState, encState); // Fallback to the current state's encoding
-      const encWrite = encode(symbolDict, writeSymbol, encRead); // Fallback to the read symbol's encoding
+      const encNewState = encode(stateDict, newState, encState);
+      const encWrite = encode(symbolDict, writeSymbol, encRead);
       const encDir = encode(dirDict, direction, '1');
 
       rules.push([encState, encRead, encNewState, encWrite, encDir].join('0'));
@@ -525,10 +524,12 @@ function convertCurrentTMToBinary() {
     binaryInput = convertInputToBinary(input, symbolDict);
   }
 
-  // Compose the final encoding
+  // Compose the final encoding with the new logic
   let result = rules.join('00');
+  result += '000'; // Always add the end-of-table marker
+
   if (binaryInput) {
-    result += '000' + binaryInput;
+    result += binaryInput; // Then, add the input if it exists
   }
 
   navigator.clipboard.writeText(result).then(() => {
