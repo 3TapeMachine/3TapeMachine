@@ -45,7 +45,6 @@ function addAlertPane(type, html) {
 
 document.addEventListener('DOMContentLoaded', () => {
   // ***FIX***: Manually initialize all Bootstrap dropdowns.
-  // This is sometimes required when using Bootstrap as a JS module.
   const dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
   [...dropdownElementList].map(dropdownToggleEl => new bootstrap.Dropdown(dropdownToggleEl));
 
@@ -154,8 +153,9 @@ const menu = (() => {
 
 // --- BEGIN: Binary Button Visibility Logic ---
 function updateBinaryButtonVisibility() {
-  const newBtn = document.getElementById('my-new-btn');
+  const newBtn = document.getElementById('binary-conversion-btn'); // <-- CHANGE #1: Correct ID
   if (!newBtn) return;
+  
   // Only show for examples
   if (!menu.currentDocument.isExample) {
     newBtn.style.display = 'none';
@@ -241,8 +241,6 @@ function updateBinaryButtonVisibility() {
     }
   }
   
-  // ***FIX***: Removed incorrect logic that showed the "Rename" dialog
-  // for "Duplicate" and "New" actions.
   [
     { id: 'tm-doc-action-duplicate', callback: duplicateDocument },
     { id: 'tm-doc-action-newblank', callback: newBlankDocument }
@@ -391,16 +389,15 @@ const dirDict = {
   'S': '111'
 };
 
-// Dynamically generate stateDict and symbolDict based on the current transition table
 function generateDictionaries(table) {
   const stateDict = { 'accept': '1', 'halt': '1', 'reject': '11' };
   const symbolDict = {};
   const states = new Set();
   const symbols = new Set();
-  const reservedKeys = ['input', 'blank', 'start state', 'table']; // Define keys to ignore
+  const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   for (const [state, transitions] of Object.entries(table)) {
-    if (reservedKeys.includes(state)) continue; // FIX: Skip non-state keys
+    if (reservedKeys.includes(state)) continue;
 
     if (typeof state === 'string' && !stateDict[state]) states.add(state);
     if (transitions && typeof transitions === 'object') {
@@ -417,14 +414,12 @@ function generateDictionaries(table) {
     }
   }
 
-  // Assign binary codes to states
   let code = 3;
   for (const s of states) {
     stateDict[s] = '1'.repeat(code);
     code++;
   }
 
-  // Assign binary codes to symbols
   let symCode = 2;
   for (const sym of symbols) {
     if (typeof sym !== 'string') continue;
@@ -438,22 +433,15 @@ function generateDictionaries(table) {
   return { stateDict, symbolDict };
 }
 
-//Encoding function for state and symbol dictionaries
-// This function encodes a key using the provided dictionary, falling back to a default value if the key is not found.
-// It trims the key and checks both the original and lowercase versions for a match.
 function encode(dict, key, fallback) {
   if (typeof key !== 'string') return fallback;
   const k = key.trim();
   return dict[k] || dict[k.toLowerCase()] || fallback;
 }
 
-// ...existing code...
-
 function convertInputToBinary(input, symbolDict) {
-  // Always encode input using symbolDict and join with '0'
   let result = [];
   for (const ch of input) {
-    // Use symbolDict or fallback to '1' (blank)
     result.push(symbolDict[ch] || '1');
   }
   return result.join('0');
@@ -472,11 +460,11 @@ function convertCurrentTMToBinary() {
   }
 
   const { stateDict, symbolDict } = generateDictionaries(table);
-  const reservedKeys = ['input', 'blank', 'start state', 'table']; // Define keys to ignore
+  const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
   for (const [state, transitions] of Object.entries(table)) {
-    if (reservedKeys.includes(state)) continue; // FIX: Skip non-state keys
+    if (reservedKeys.includes(state)) continue;
     if (!transitions || typeof transitions !== 'object') continue;
     
     for (const [readSymbol, instr] of Object.entries(transitions)) {
@@ -525,7 +513,7 @@ function convertCurrentTMToBinary() {
 
 // --- Attach binary conversion to button after DOM is ready ---
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('my-new-btn');
+  const btn = document.getElementById('binary-conversion-btn'); // <-- CHANGE #2: Correct ID
   if (btn) {
     btn.addEventListener('click', convertCurrentTMToBinary);
   }
@@ -533,3 +521,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // For interaction/debugging
 export { controller };
+
+
+// --- CHANGE #3: ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
+document.addEventListener('DOMContentLoaded', () => {
+    // A small delay ensures the menu and controller are fully initialized
+    setTimeout(() => {
+        if (menu.currentDocument) {
+            updateBinaryButtonVisibility();
+        }
+    }, 100); // 100ms delay
+});
