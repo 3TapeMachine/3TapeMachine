@@ -151,23 +151,20 @@ const menu = (() => {
 // "Edit" Menu //
 /////////////////
 
-// --- BEGIN: Binary Button Visibility Logic ---
 function updateBinaryButtonVisibility() {
-  const newBtn = document.getElementById('binary-conversion-btn'); // <-- CHANGE #1: Correct ID
+  const newBtn = document.getElementById('my-new-btn'); // <-- CORRECTED ID
   if (!newBtn) return;
   
-  // Only show for examples
   if (!menu.currentDocument.isExample) {
     newBtn.style.display = 'none';
     return;
   }
-  // Parse YAML from editor to check for type: 3tape
+
   let src = controller.editor.getValue();
   let doc;
   try {
     doc = yaml.load(src);
   } catch {
-    // If YAML is invalid, hide the button
     newBtn.style.display = 'none';
     return;
   }
@@ -178,7 +175,6 @@ function updateBinaryButtonVisibility() {
     newBtn.style.display = 'inline-block';
   }
 }
-// --- END: Binary Button Visibility Logic ---
 
 (() => {
   menu.onChange = (doc, opts) => {
@@ -193,10 +189,9 @@ function updateBinaryButtonVisibility() {
         controller.openDocument(doc);
     }
     refreshEditMenu();
-    updateBinaryButtonVisibility(); // <-- Call here
+    updateBinaryButtonVisibility();
   };
 
-  // Refresh the "Edit" menu items depending on document vs. example.
   const refreshEditMenu = (() => {
     const renameLink = document.querySelector('[data-bs-target="#renameDialog"]');
     const deleteLink = document.querySelector('[data-bs-target="#deleteDialog"]');
@@ -234,8 +229,7 @@ function updateBinaryButtonVisibility() {
 
   function newBlankDocument() {
     menu.newDocument({ select: true });
-    // load up starter template
-    if (controller.editor.insertSnippet) { // async loaded
+    if (controller.editor.insertSnippet) {
       controller.editor.insertSnippet(examples.blankTemplate);
       controller.loadEditorSource();
     }
@@ -513,7 +507,7 @@ function convertCurrentTMToBinary() {
 
 // --- Attach binary conversion to button after DOM is ready ---
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('binary-conversion-btn'); // <-- CHANGE #2: Correct ID
+  const btn = document.getElementById('my-new-btn'); // <-- CORRECTED ID
   if (btn) {
     btn.addEventListener('click', convertCurrentTMToBinary);
   }
@@ -522,13 +516,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // For interaction/debugging
 export { controller };
 
-
-// --- CHANGE #3: ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
+// --- ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
     // A small delay ensures the menu and controller are fully initialized
     setTimeout(() => {
         if (menu.currentDocument) {
             updateBinaryButtonVisibility();
         }
-    }, 100); // 100ms delay
+    }, 100);
 });
