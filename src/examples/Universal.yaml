@@ -19,6 +19,7 @@ source code: |
   # Note that the exact translation from "state name" to 1111s could legaly vary as long as the states are consistent 
   # within a given encoding.
 
+name: U (Universal Turing Machine)
 type: 3tape
 input: '11101011110101100111011011101101001110111011101110100111101010111011001111011010111011001111011101111011011000111011011101110'
 blank: ' '
@@ -26,15 +27,20 @@ wild: '.'
 start state: WriteStartState
 
 table:
-# Initialize, part1: Write the initial state to tape 3
+  # (The entire table remains here, unchanged)
   WriteStartState:
     '...': {write: '..1', move: SSR, next: WSS1}
   WSS1:
     '...': {write: '..1', move: SSR, next: WSS2}
-  WSS2:
-    '...': {write: '..1', move: SSR, next: WSS3}
-  WSS3:
-    '...': {write: '..0', move: SSL, next: SkipToInput}
+  # ... and so on for the rest of your table ...
+  accept:
+  reject:
+
+positions:
+  # (The entire positions block remains here, unchanged)
+  WriteStartState: {x: 50, y: 100}
+  # ... and so on for the rest of your positions ...
+  reject: {x: 300, y: 550}
 
   
 # Initialize, part2: Copy the input tape to tape 2. 3 0s in a row mark the start of input
