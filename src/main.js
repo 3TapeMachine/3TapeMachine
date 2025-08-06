@@ -441,10 +441,15 @@ function convertInputToBinary(input, symbolDict) {
   return result.join('0');
 }
 
+// const binaryConversionButton = 
 function convertCurrentTMToBinary() {
-  // Get the rules from the correct location revealed by the console log.
-  const parsedRules = controller.simulator.__spec ? controller.simulator.__spec.table : null;
+  // Replace the old console.log with these three lines
+  console.log("--- 'Binary conversion' was clicked ---");
+  console.log("Controller state at conversion:", controller);
+  console.log("Rules table at conversion:", controller.simulator.__spec ? controller.simulator.__spec.table : "Not found");
 
+  const parsedRules = controller.simulator.__spec ? controller.simulator.__spec.table : null;
+  
   // Safety check: Ensure rules are loaded.
   if (!parsedRules || Object.keys(parsedRules).length === 0) {
     addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first to sync the code from the editor.");
@@ -529,12 +534,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // For interaction/debugging
 export { controller };
 
-// --- ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
+// --- THE VISIBILITY CHECK ON PAGE LOAD ---
+// Binary_Conversion_Visibility
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Fix for initial button visibility ---
     // A small delay ensures the menu and controller are fully initialized
     setTimeout(() => {
         if (menu.currentDocument) {
             updateBinaryButtonVisibility();
         }
     }, 100);
+
+    // --- Debugging probe for 'Load machine' button ---
+    const loadBtn = document.querySelector('.tm-editor-load');
+    if (loadBtn) {
+        loadBtn.addEventListener('click', () => {
+            console.log("--- 'Load machine' was clicked ---");
+            // Wait a moment for any async actions to potentially complete
+            setTimeout(() => {
+                console.log("Controller state AFTER loading:", controller);
+                console.log("Rules table AFTER loading:", controller.simulator.__spec ? controller.simulator.__spec.table : "Not found");
+            }, 200); // 200ms delay
+        });
+    }
 });
