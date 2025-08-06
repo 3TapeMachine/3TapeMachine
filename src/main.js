@@ -442,6 +442,16 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 function convertCurrentTMToBinary() {
+  // First, check if the machine has been loaded into the simulator.
+  const parsedRules = controller.simulator.machine ? controller.simulator.machine.rules : null;
+
+  // ▼▼▼ ADD THIS SAFETY CHECK BACK IN ▼▼▼
+  if (!parsedRules || Object.keys(parsedRules).length === 0) {
+    addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first to sync the code from the editor.");
+    return;
+  }
+  // ▲▲▲ END OF SAFETY CHECK ▲▲▲
+
   let src = controller.editor.getValue();
   let doc;
   try { doc = yaml.load(src); } 
@@ -457,26 +467,26 @@ function convertCurrentTMToBinary() {
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
-  for (const [state, transitions] of Object.entries(table)) {
+  for (const state in parsedRules) {
     if (reservedKeys.includes(state)) continue;
-    if (!transitions || typeof transitions !== 'object') continue;
+    const transitions = parsedRules[state];
     
-    for (const [readSymbol, instr] of Object.entries(transitions)) {
-      let newState = state;
+    for (const readSymbol in transitions) {
+      const instr = transitions[readSymbol];
+      
       let writeSymbol = readSymbol;
-      let direction = null;
+      if ('symbol' in instr) {
+        writeSymbol = instr.symbol.toString();
+      }
+      
+      let newState = state;
+      if ('state' in instr) {
+        newState = instr.state;
+      }
 
-      if (typeof instr === 'string') {
-        direction = instr;
-      } else if (typeof instr === 'object') {
-        // ▼▼▼ THIS LINE IS THE FIX ▼▼▼ _for the repeat_0_1_issue.
-        if ('write' in instr && (typeof instr.write === 'string' || typeof instr.write === 'number')) writeSymbol = instr.write.toString();
-        // ▲▲▲ END OF FIX ▲▲▲
-        if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
-        else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
-        else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
-        else if ('direction' in instr && typeof instr.direction === 'string') direction = instr.direction;
-        if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
+      let direction = null;
+      if ('move' in instr && instr.move && typeof instr.move.toString === 'function') {
+        direction = instr.move.toString().toUpperCase();
       }
 
       const encState = encode(stateDict, state, '1');
