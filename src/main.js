@@ -469,7 +469,9 @@ function convertCurrentTMToBinary() {
       if (typeof instr === 'string') {
         direction = instr;
       } else if (typeof instr === 'object') {
-        if ('write' in instr && typeof instr.write === 'string') writeSymbol = instr.write;
+        // ▼▼▼ THIS LINE IS THE FIX ▼▼▼ _for the repeat_0_1_issue.
+        if ('write' in instr && (typeof instr.write === 'string' || typeof instr.write === 'number')) writeSymbol = instr.write.toString();
+        // ▲▲▲ END OF FIX ▲▲▲
         if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
         else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
         else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
