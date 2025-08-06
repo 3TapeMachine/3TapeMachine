@@ -442,23 +442,22 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 function convertCurrentTMToBinary() {
-  console.log("Debugging Controller Object:", controller); // console debugging line
-  // First, check if the machine has been loaded into the simulator.
-  const parsedRules = controller.simulator.machine ? controller.simulator.machine.rules : null;
+  // Get the rules from the correct location revealed by the console log.
+  const parsedRules = controller.simulator.__spec ? controller.simulator.__spec.table : null;
 
-  // ▼▼▼ ADD THIS SAFETY CHECK BACK IN ▼▼▼
+  // Safety check: Ensure rules are loaded.
   if (!parsedRules || Object.keys(parsedRules).length === 0) {
     addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first to sync the code from the editor.");
     return;
   }
-  // ▲▲▲ END OF SAFETY CHECK ▲▲▲
 
+  // We still need to parse the source YAML to get the input string.
   let src = controller.editor.getValue();
   let doc;
   try { doc = yaml.load(src); } 
   catch (e) { addAlertPane('danger', 'Could not parse YAML: ' + e.message); return; }
 
-  const table = doc.table || doc;
+  const table = doc.table || doc; // Used for dictionary generation
   if (!table || typeof table !== 'object') {
     addAlertPane('danger', 'No transition table found.');
     return;
@@ -468,6 +467,7 @@ function convertCurrentTMToBinary() {
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
+  // Iterate over the CORRECT rules object
   for (const state in parsedRules) {
     if (reservedKeys.includes(state)) continue;
     const transitions = parsedRules[state];
