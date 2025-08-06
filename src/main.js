@@ -442,47 +442,40 @@ function convertInputToBinary(input, symbolDict) {
   return result.join('0');
 }
 
-// const binaryConversionButton = 
 function convertCurrentTMToBinary() {
-  // Get the document object from the controller
-  const currentDoc = controller.getDocument();
+  let src = controller.editor.getValue();
+  let doc;
+  try { doc = yaml.load(src); } 
+  catch (e) { addAlertPane('danger', 'Could not parse YAML: ' + e.message); return; }
 
-  // Get the rules from the correct location: document -> spec -> table
-  const parsedRules = currentDoc && currentDoc.spec ? currentDoc.spec.table : null;
-
-  // Safety check: Ensure rules are loaded.
-  if (!parsedRules || Object.keys(parsedRules).length === 0) {
-    addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first.");
+  const table = doc.table || doc;
+  if (!table || typeof table !== 'object') {
+    addAlertPane('danger', 'No transition table found.');
     return;
   }
 
-  // Generate dictionaries using the loaded rules
-  const { stateDict, symbolDict } = generateDictionaries(parsedRules);
+  const { stateDict, symbolDict } = generateDictionaries(table);
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
-  // Iterate over the CORRECT rules object
-  for (const state in parsedRules) {
+  for (const [state, transitions] of Object.entries(table)) {
     if (reservedKeys.includes(state)) continue;
-    const transitions = parsedRules[state];
+    if (!transitions || typeof transitions !== 'object') continue;
     
-    for (const readSymbol in transitions) {
-      const instr = transitions[readSymbol];
-      
-      let writeSymbol = readSymbol;
-      // Note: The structure here comes from the parsed machine, not the raw YAML
-      if ('symbol' in instr) {
-        writeSymbol = instr.symbol.toString();
-      }
-      
+    for (const [readSymbol, instr] of Object.entries(transitions)) {
       let newState = state;
-      if ('state' in instr) {
-        newState = instr.state;
-      }
-
+      let writeSymbol = readSymbol;
       let direction = null;
-      if ('move' in instr && instr.move && typeof instr.move.toString === 'function') {
-        direction = instr.move.toString().toUpperCase();
+
+      if (typeof instr === 'string') {
+        direction = instr;
+      } else if (typeof instr === 'object') {
+        if ('write' in instr && typeof instr.write === 'string') writeSymbol = instr.write;
+        if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
+        else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
+        else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
+        else if ('direction' in instr && typeof instr.direction === 'string') direction = instr.direction;
+        if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
 
       const encState = encode(stateDict, state, '1');
@@ -494,8 +487,7 @@ function convertCurrentTMToBinary() {
     }
   }
 
-  // Get the input string from the document's spec
-  let input = currentDoc.spec.input || '';
+  let input = doc.input || '';
   let binaryInput = '';
   if (input) {
     binaryInput = convertInputToBinary(input, symbolDict);
@@ -525,27 +517,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // For interaction/debugging
 export { controller };
 
-// --- THE VISIBILITY CHECK ON PAGE LOAD ---
-// Binary_Conversion_Visibility
+// --- ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Fix for initial button visibility ---
     // A small delay ensures the menu and controller are fully initialized
     setTimeout(() => {
         if (menu.currentDocument) {
             updateBinaryButtonVisibility();
         }
     }, 100);
-
-    // --- Debugging probe for 'Load machine' button ---
-    const loadBtn = document.querySelector('.tm-editor-load');
-    if (loadBtn) {
-        loadBtn.addEventListener('click', () => {
-            console.log("--- 'Load machine' was clicked ---");
-            // Wait a moment for any async actions to potentially complete
-            setTimeout(() => {
-                console.log("Controller state AFTER loading:", controller);
-                console.log("Rules table AFTER loading:", controller.simulator.__spec ? controller.simulator.__spec.table : "Not found");
-            }, 200); // 200ms delay
-        });
-    }
 });
