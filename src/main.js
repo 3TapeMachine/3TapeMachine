@@ -442,6 +442,7 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 function convertCurrentTMToBinary() {
+  console.log("Debugging Controller Object:", controller); // <-- ADD THIS LINE
   // First, check if the machine has been loaded into the simulator.
   const parsedRules = controller.simulator.machine ? controller.simulator.machine.rules : null;
 
