@@ -457,34 +457,27 @@ function convertCurrentTMToBinary() {
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
-  // Use the machine object that has been fully parsed by the application's internal logic.
-  // This ensures we work with the same structure you see in the console.
-  const parsedRules = controller.simulator.machine.rules;
-
-  for (const state in parsedRules) {
+  for (const [state, transitions] of Object.entries(table)) {
     if (reservedKeys.includes(state)) continue;
-    const transitions = parsedRules[state];
+    if (!transitions || typeof transitions !== 'object') continue;
     
-    for (const readSymbol in transitions) {
-      const instr = transitions[readSymbol];
-      
-      // ▼▼▼ THIS LOGIC IS REWRITTEN TO MATCH THE CONSOLE STRUCTURE ▼▼▼
-      let writeSymbol = readSymbol; // Default to read symbol
-      if ('symbol' in instr) {
-        writeSymbol = instr.symbol.toString(); // Use the 'symbol' key
-      }
-      
-      let newState = state; // Default to current state
-      if ('state' in instr) {
-        newState = instr.state; // Use the 'state' key
-      }
-
+    for (const [readSymbol, instr] of Object.entries(transitions)) {
+      let newState = state;
+      let writeSymbol = readSymbol;
       let direction = null;
-      if ('move' in instr && instr.move && typeof instr.move.toString === 'function') {
-        // Get direction by calling .toString() on the move object
-        direction = instr.move.toString().toUpperCase();
+
+      if (typeof instr === 'string') {
+        direction = instr;
+      } else if (typeof instr === 'object') {
+        // ▼▼▼ THIS LINE IS THE FIX ▼▼▼ _for the repeat_0_1_issue.
+        if ('write' in instr && (typeof instr.write === 'string' || typeof instr.write === 'number')) writeSymbol = instr.write.toString();
+        // ▲▲▲ END OF FIX ▲▲▲
+        if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
+        else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
+        else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
+        else if ('direction' in instr && typeof instr.direction === 'string') direction = instr.direction;
+        if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
-      // ▲▲▲ END OF REWRITTEN LOGIC ▲▲▲
 
       const encState = encode(stateDict, state, '1');
       const encRead = encode(symbolDict, readSymbol, '1');
