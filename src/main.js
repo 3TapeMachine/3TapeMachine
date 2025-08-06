@@ -442,46 +442,44 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 // const binaryConversionButton = 
+// Replace the existing function in your main.js file with this one
 function convertCurrentTMToBinary() {
-  // Get the document object from the controller
-  const currentDoc = controller.getDocument();
+  let src = controller.editor.getValue();
+  let doc;
+  try { doc = yaml.load(src); } 
+  catch (e) { addAlertPane('danger', 'Could not parse YAML: ' + e.message); return; }
 
-  // Get the rules from the correct location: document -> spec -> table
-  const parsedRules = currentDoc && currentDoc.spec ? currentDoc.spec.table : null;
-
-  // Safety check: Ensure rules are loaded.
-  if (!parsedRules || Object.keys(parsedRules).length === 0) {
-    addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first.");
+  const table = doc.table || doc;
+  if (!table || typeof table !== 'object') {
+    addAlertPane('danger', 'No transition table found.');
     return;
   }
 
-  // Generate dictionaries using the loaded rules
-  const { stateDict, symbolDict } = generateDictionaries(parsedRules);
+  const { stateDict, symbolDict } = generateDictionaries(table);
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
-  // Iterate over the CORRECT rules object
-  for (const state in parsedRules) {
+  for (const [state, transitions] of Object.entries(table)) {
     if (reservedKeys.includes(state)) continue;
-    const transitions = parsedRules[state];
+    if (!transitions || typeof transitions !== 'object') continue;
     
-    for (const readSymbol in transitions) {
-      const instr = transitions[readSymbol];
-      
-      let writeSymbol = readSymbol;
-      // Note: The structure here comes from the parsed machine, not the raw YAML
-      if ('symbol' in instr) {
-        writeSymbol = instr.symbol.toString();
-      }
-      
+    for (const [readSymbol, instr] of Object.entries(transitions)) {
       let newState = state;
-      if ('state' in instr) {
-        newState = instr.state;
-      }
-
+      let writeSymbol = readSymbol;
       let direction = null;
-      if ('move' in instr && instr.move && typeof instr.move.toString === 'function') {
-        direction = instr.move.toString().toUpperCase();
+
+      if (typeof instr === 'string') {
+        direction = instr;
+      } else if (typeof instr === 'object') {
+        // ▼▼▼ THIS IS THE CORRECTED LINE ▼▼▼
+        if ('write' in instr && (typeof instr.write === 'string' || typeof instr.write === 'number')) writeSymbol = instr.write.toString();
+        // ▲▲▲ END OF CORRECTION ▲▲▲
+        
+        if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
+        else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
+        else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
+        else if ('direction' in instr && typeof instr.direction === 'string') direction = instr.direction;
+        if ('state' in instr && typeof instr.state === 'string') newState = instr.state;
       }
 
       const encState = encode(stateDict, state, '1');
@@ -493,8 +491,7 @@ function convertCurrentTMToBinary() {
     }
   }
 
-  // Get the input string from the document's spec
-  let input = currentDoc.spec.input || '';
+  let input = doc.input || '';
   let binaryInput = '';
   if (input) {
     binaryInput = convertInputToBinary(input, symbolDict);
