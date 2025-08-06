@@ -443,32 +443,20 @@ function convertInputToBinary(input, symbolDict) {
 
 // const binaryConversionButton = 
 function convertCurrentTMToBinary() {
-  // Replace the old console.log with these three lines
-  console.log("--- 'Binary conversion' was clicked ---");
-  console.log("Controller state at conversion:", controller);
-  console.log("Rules table at conversion:", controller.simulator.__spec ? controller.simulator.__spec.table : "Not found");
+  // Get the document object from the controller
+  const currentDoc = controller.getDocument();
 
-  const parsedRules = controller.simulator.__spec ? controller.simulator.__spec.table : null;
-  
+  // Get the rules from the correct location: document -> spec -> table
+  const parsedRules = currentDoc && currentDoc.spec ? currentDoc.spec.table : null;
+
   // Safety check: Ensure rules are loaded.
   if (!parsedRules || Object.keys(parsedRules).length === 0) {
-    addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first to sync the code from the editor.");
+    addAlertPane('warning', "Machine rules not loaded. Please click <strong>'Load machine'</strong> first.");
     return;
   }
 
-  // We still need to parse the source YAML to get the input string.
-  let src = controller.editor.getValue();
-  let doc;
-  try { doc = yaml.load(src); } 
-  catch (e) { addAlertPane('danger', 'Could not parse YAML: ' + e.message); return; }
-
-  const table = doc.table || doc; // Used for dictionary generation
-  if (!table || typeof table !== 'object') {
-    addAlertPane('danger', 'No transition table found.');
-    return;
-  }
-
-  const { stateDict, symbolDict } = generateDictionaries(table);
+  // Generate dictionaries using the loaded rules
+  const { stateDict, symbolDict } = generateDictionaries(parsedRules);
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
   let rules = [];
@@ -481,6 +469,7 @@ function convertCurrentTMToBinary() {
       const instr = transitions[readSymbol];
       
       let writeSymbol = readSymbol;
+      // Note: The structure here comes from the parsed machine, not the raw YAML
       if ('symbol' in instr) {
         writeSymbol = instr.symbol.toString();
       }
@@ -504,7 +493,8 @@ function convertCurrentTMToBinary() {
     }
   }
 
-  let input = doc.input || '';
+  // Get the input string from the document's spec
+  let input = currentDoc.spec.input || '';
   let binaryInput = '';
   if (input) {
     binaryInput = convertInputToBinary(input, symbolDict);
