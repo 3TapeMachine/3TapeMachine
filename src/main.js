@@ -160,7 +160,7 @@ function updateBinaryButtonVisibility() {
     return;
   }
 
-  let src = controller.editor.getValue();
+  const src = controller.editor.getValue();
   let doc;
   try {
     doc = yaml.load(src);
@@ -397,9 +397,11 @@ function generateDictionaries(table) {
     if (typeof state === 'string' && !stateDict[state]) states.add(state);
     if (transitions && typeof transitions === 'object') {
       for (const [readSymbol, instr] of Object.entries(transitions)) {
+        console.log('Processing transition:', state, readSymbol, instr);
         if (typeof readSymbol === 'string') symbols.add(readSymbol);
         if (typeof instr === 'object') {
-          if ('write' in instr && typeof instr.write === 'string') symbols.add(instr.write);
+          console.log('Write is ', instr.write, ' and type is ', typeof instr.write);
+          if ('write' in instr) symbols.add(instr.write.toString());
           if ('L' in instr && typeof instr.L === 'string' && !stateDict[instr.L]) states.add(instr.L);
           if ('R' in instr && typeof instr.R === 'string' && !stateDict[instr.R]) states.add(instr.R);
           if ('S' in instr && typeof instr.S === 'string' && !stateDict[instr.S]) states.add(instr.S);
@@ -417,6 +419,7 @@ function generateDictionaries(table) {
 
   let symCode = 2;
   for (const sym of symbols) {
+    console.log(sym, symCode);
     if (typeof sym !== 'string') continue;
     if (sym.trim() === '') {
       symbolDict[sym] = '1';
@@ -435,7 +438,7 @@ function encode(dict, key, fallback) {
 }
 
 function convertInputToBinary(input, symbolDict) {
-  let result = [];
+  const result = [];
   for (const ch of input) {
     result.push(symbolDict[ch] || '1');
   }
@@ -443,7 +446,7 @@ function convertInputToBinary(input, symbolDict) {
 }
 
 function convertCurrentTMToBinary() {
-  let src = controller.editor.getValue();
+  const src = controller.editor.getValue();
   let doc;
   try { doc = yaml.load(src); } 
   catch (e) { addAlertPane('danger', 'Could not parse YAML: ' + e.message); return; }
@@ -457,7 +460,7 @@ function convertCurrentTMToBinary() {
   const { stateDict, symbolDict } = generateDictionaries(table);
   const reservedKeys = ['input', 'blank', 'start state', 'table'];
 
-  let rules = [];
+  const rules = [];
   for (const [state, transitions] of Object.entries(table)) {
     if (reservedKeys.includes(state)) continue;
     if (!transitions || typeof transitions !== 'object') continue;
@@ -470,7 +473,7 @@ function convertCurrentTMToBinary() {
       if (typeof instr === 'string') {
         direction = instr;
       } else if (typeof instr === 'object') {
-        if ('write' in instr && typeof instr.write === 'string') writeSymbol = instr.write;
+        if ('write' in instr) writeSymbol = instr.write.toString();
         if ('L' in instr && typeof instr.L === 'string') { direction = 'L'; newState = instr.L; }
         else if ('R' in instr && typeof instr.R === 'string') { direction = 'R'; newState = instr.R; }
         else if ('S' in instr && typeof instr.S === 'string') { direction = 'S'; newState = instr.S; }
@@ -487,7 +490,7 @@ function convertCurrentTMToBinary() {
     }
   }
 
-  let input = doc.input || '';
+  const input = doc.input || '';
   let binaryInput = '';
   if (input) {
     binaryInput = convertInputToBinary(input, symbolDict);
@@ -519,10 +522,10 @@ export { controller };
 
 // --- ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
-    // A small delay ensures the menu and controller are fully initialized
-    setTimeout(() => {
-        if (menu.currentDocument) {
-            updateBinaryButtonVisibility();
-        }
-    }, 100);
+  // A small delay ensures the menu and controller are fully initialized
+  setTimeout(() => {
+    if (menu.currentDocument) {
+      updateBinaryButtonVisibility();
+    }
+  }, 100);
 });
