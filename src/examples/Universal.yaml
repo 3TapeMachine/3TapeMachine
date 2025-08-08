@@ -230,8 +230,8 @@ positions:
 
 # Centralized, Radial Layout
   # Center hub
-  MatchState: {x: 600, y: 400}
-  MatchSymbol: {x: 700, y: 400}
+  MatchState: {x: 51, y: 378}
+  MatchSymbol: {x: 51, y: 271}
   WriteSymbol: {x: 800, y: 400}
   finish: {x: 600, y: 520}
   accept: {x: 540, y: 600}
@@ -242,27 +242,27 @@ positions:
   WSS1:           {x: 145, y: 20}
   WSS2:           {x: 232, y: 20}
   WSS3:           {x: 333, y: 20}
-  SkipToInput:    {x: 620, y: 220}
-  SkipToInput1:   {x: 700, y: 240}
-  SkipToInput2:   {x: 780, y: 260}
+  SkipToInput:    {x: 466, y: 20}
+  SkipToInput1:   {x: 596, y: 20}
+  SkipToInput2:   {x: 753, y: 20}
 
   # Input Copying arc (upper right)
-  CopyInputStart: {x: 860, y: 280}
-  CopyInput1:     {x: 900, y: 340}
-  CopyInput0:     {x: 900, y: 420}
-  RewindInput:    {x: 860, y: 480}
-  BlankInput:     {x: 780, y: 500}
-  BlankInput1:    {x: 700, y: 520}
+  CopyInputStart: {x: 752, y: 407}
+  CopyInput1:     {x: 665, y: 468}
+  CopyInput0:     {x: 523, y: 480}
+  RewindInput:    {x: 388, y: 480}
+  BlankInput:     {x: 752, y: 157}
+  BlankInput1:    {x: 752, y: 279}
 
   # Main Loop & Matching (left and right spokes)
-  RewindTransitions: {x: 400, y: 400}
-  RewindState: {x: 500, y: 400}
-  RewindSymbolForNextTransition: {x: 700, y: 480}
-  SkipTransition: {x: 700, y: 320}
-  SkipTransition1: {x: 800, y: 320}
+  RewindTransitions: {x: 237, y: 480}
+  RewindState: {x: 99, y: 480}
+  RewindSymbolForNextTransition: {x: 157, y: 139}
+  SkipTransition: {x: 339, y: 139}
+  SkipTransition1: {x: 465, y: 139}
 
   # State & Symbol Writing (lower right arc)
-  ChangeStateRewind:   {x: 800, y: 480}
+  ChangeStateRewind:   {x: 624, y: 139}
   WriteNextState:      {x: 860, y: 540}
   WriteSymbolRewind:   {x: 920, y: 600}
 
