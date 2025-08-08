@@ -238,7 +238,7 @@ positions:
   reject: {x: 660, y: 600}
 
   # Initialization arc (upper left)
-  WriteStartState: {x: 300, y: 200}
+  WriteStartState: {x: 169, y: 111}
   WSS1:           {x: 380, y: 180}
   WSS2:           {x: 460, y: 180}
   WSS3:           {x: 540, y: 200}
