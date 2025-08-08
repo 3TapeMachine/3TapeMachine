@@ -226,58 +226,59 @@ source code: |
     reject:
 
 positions:
-# Initialization Group
-  WriteStartState: {x: 50, y: 100}
-  WSS1: {x: 150, y: 100}
-  WSS2: {x: 250, y: 100}
-  WSS3: {x: 350, y: 100}
-  SkipToInput: {x: 450, y: 100}
-  SkipToInput1: {x: 550, y: 100}
-  SkipToInput2: {x: 650, y: 100}
-  
-  # Input Copying Group
-  CopyInputStart: {x: 750, y: 100}
-  CopyInput1: {x: 850, y: 50}
-  CopyInput0: {x: 850, y: 150}
-  RewindInput: {x: 950, y: 100}
-  BlankInput: {x: 550, y: 200}
-  BlankInput1: {x: 650, y: 200}
-    
-  # Main Loop & Matching Group
-  RewindTransitions: {x: 50, y: 300}
-  RewindState: {x: 150, y: 300}
-  MatchState: {x: 250, y: 300}
-  MatchSymbol: {x: 350, y: 300}
-  RewindSymbolForNextTransition: {x: 450, y: 350}
-  SkipTransition: {x: 450, y: 250}
-  SkipTransition1: {x: 550, y: 250}
-  
-  # State & Symbol Writing Group
-  ChangeStateRewind: {x: 350, y: 400}
-  WriteNextState: {x: 450, y: 400}
-  WriteSymbolRewind: {x: 550, y: 400}
-  WriteSymbol: {x: 650, y: 400}
-  
-  # Tape Head Movement Group
-  MoveHead: {x: 650, y: 500}
-  MoveHead1: {x: 750, y: 500}
-  MoveHead2: {x: 850, y: 500}
-  LeftOneSymbol: {x: 950, y: 450}
-  LeftTwoSymbol: {x: 950, y: 550}
-  LeftAddBlank: {x: 1050, y: 550}
-  CheckBlankRight: {x: 950, y: 600}
-  AddBlankRight: {x: 1050, y: 600}
-  
-  # Tape Shifting (Complex) Group - Placed separately
-  RightShift0: {x: 750, y: 300}
-  RightShift1: {x: 750, y: 350}
-  RiftShiftRewind: {x: 850, y: 325}
-  LeftShiftFastForward: {x: 750, y: 200}
-  LeftShiftSpace: {x: 850, y: 200}
-  LeftShift0: {x: 950, y: 250}
-  LeftShift1: {x: 950, y: 150}
-    
-  # Finish/Halt Group
-  finish: {x: 250, y: 500}
-  accept: {x: 200, y: 550}
-  reject: {x: 300, y: 550}
+
+# Initialization Group (top left, horizontal)
+  WriteStartState: {x: 100, y: 100}
+  WSS1:           {x: 220, y: 100}
+  WSS2:           {x: 340, y: 100}
+  WSS3:           {x: 460, y: 100}
+  SkipToInput:    {x: 580, y: 100}
+  SkipToInput1:   {x: 700, y: 100}
+  SkipToInput2:   {x: 820, y: 100}
+
+# Input Copying Group (top right, vertical)
+  CopyInputStart: {x: 940, y: 100}
+  CopyInput1:     {x: 940, y: 180}
+  CopyInput0:     {x: 940, y: 260}
+  RewindInput:    {x: 940, y: 340}
+  BlankInput:     {x: 820, y: 220}
+  BlankInput1:    {x: 820, y: 300}
+
+# Main Loop & Matching Group (middle, horizontal)
+  RewindTransitions:           {x: 200, y: 350}
+  RewindState:                 {x: 320, y: 350}
+  MatchState:                  {x: 440, y: 350}
+  MatchSymbol:                 {x: 560, y: 350}
+  RewindSymbolForNextTransition: {x: 680, y: 390}
+  SkipTransition:              {x: 680, y: 310}
+  SkipTransition1:             {x: 800, y: 310}
+
+# State & Symbol Writing Group (middle right, horizontal)
+  ChangeStateRewind:   {x: 560, y: 470}
+  WriteNextState:      {x: 680, y: 470}
+  WriteSymbolRewind:   {x: 800, y: 470}
+  WriteSymbol:         {x: 920, y: 470}
+
+# Tape Head Movement Group (bottom right, vertical)
+  MoveHead:        {x: 920, y: 570}
+  MoveHead1:       {x: 920, y: 650}
+  MoveHead2:       {x: 920, y: 730}
+  LeftOneSymbol:   {x: 1040, y: 610}
+  LeftTwoSymbol:   {x: 1040, y: 690}
+  LeftAddBlank:    {x: 1160, y: 690}
+  CheckBlankRight: {x: 1040, y: 770}
+  AddBlankRight:   {x: 1160, y: 770}
+
+# Tape Shifting (Complex) Group (bottom left, grid)
+  RightShift0:        {x: 200, y: 570}
+  RightShift1:        {x: 320, y: 570}
+  RiftShiftRewind:    {x: 260, y: 650}
+  LeftShiftFastForward: {x: 440, y: 570}
+  LeftShiftSpace:     {x: 560, y: 570}
+  LeftShift0:         {x: 680, y: 570}
+  LeftShift1:         {x: 800, y: 570}
+
+# Finish/Halt Group (bottom center)
+  finish: {x: 560, y: 730}
+  accept: {x: 500, y: 810}
+  reject: {x: 620, y: 810}
