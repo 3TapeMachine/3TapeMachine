@@ -241,7 +241,7 @@ positions:
   WSS2:           {x: 328, y: 20}
   WSS3:           {x: 505, y: 20}
   SkipToInput:    {x: 667, y: 20}
-  SkipToInput1:   {x: 753, y: 90}
+  SkipToInput1:   {x: 780, y: 101}
   SkipToInput2:   {x: 753, y: 20}
 
   # Input Copying arc (upper right)
