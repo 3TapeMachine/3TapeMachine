@@ -70,7 +70,7 @@ export default class TMSimulator {
         this.machine = new TMViz(this.container, spec, posTable);
       } else {
         // load new
-        this.machine = new TMViz(this.container, spec);
+        this.machine = new TMViz(this.container, spec, spec.positions);//passing the YAML positions when changes are made to YAML file
       }
     }
     this.__sourceCode = sourceCode;
