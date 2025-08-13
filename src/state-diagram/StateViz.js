@@ -174,13 +174,14 @@ export default function StateViz(container, nodes, linkArray) {
       dragstart(d);
     })
     .on('drag', function (event, d) {
-  // Update the data model for the physics engine
+  // Update the node's fixed position to the cursor's position.
       d.fx = event.x;
       d.fy = event.y;
 
-  // updated the visual element directly for real-time feedback.
-  // 'this' refers to the circle element being dragged.
-      d3.select(this).attr('cx', d.fx).attr('cy', d.fy);
+  // Manually trigger a single simulation tick.
+  // This forces the .on('tick', ...) handler to fire immediately,
+  // redrawing the circle, its label, and all connected edges in real-time.
+      force.tick(); 
 })
     .on('end', function (event, d) {
       if (!event.active) force.alphaTarget(0);
