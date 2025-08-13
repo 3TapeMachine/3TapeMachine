@@ -240,17 +240,17 @@ positions:
   WSS1:           {x: 188.11, y: 43.06}
   WSS2:           {x: 307.50, y: 23.42}
   WSS3:           {x: 461.43, y: 29.40}
-  SkipToInput:    {x: 667, y: 20}
-  SkipToInput1:   {x: 780, y: 101}
-  SkipToInput2:   {x: 753, y: 20}
+  SkipToInput:    {x: 573.89, y: 78.94}
+  SkipToInput1:   {x: 692.87, y: 123.21}
+  SkipToInput2:   {x: 748.73, y: 185.72}
 
   # Input Copying arc (upper right)
   CopyInputStart: {x: 752, y: 407}
   CopyInput1:     {x: 665, y: 468}
   CopyInput0:     {x: 523, y: 480}
   RewindInput:    {x: 388, y: 480}
-  BlankInput:     {x: 752, y: 157}
-  BlankInput1:    {x: 752, y: 279}
+  BlankInput:     {x: 759.69, y: 274.03}
+  BlankInput1:    {x: 756.27, y: 372.97}
 
   # Main Loop & Matching (left and right spokes)
   RewindTransitions: {x: 237, y: 480}
