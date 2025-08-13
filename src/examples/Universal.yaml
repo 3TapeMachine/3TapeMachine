@@ -237,9 +237,9 @@ positions:
 
   # Initialization arc (upper left)
   WriteStartState: {x: 75.13, y: 79.59}
-  WSS1:           {x: 177, y: 20}
-  WSS2:           {x: 328, y: 20}
-  WSS3:           {x: 505, y: 20}
+  WSS1:           {x: 188.11, y: 43.06}
+  WSS2:           {x: 307.50, y: 23.42}
+  WSS3:           {x: 461.43, y: 29.40}
   SkipToInput:    {x: 667, y: 20}
   SkipToInput1:   {x: 780, y: 101}
   SkipToInput2:   {x: 753, y: 20}
