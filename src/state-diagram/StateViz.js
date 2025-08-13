@@ -342,7 +342,7 @@ function setPositionTable(posTable, stateMap) {
     const position = posTable[state];
     if (position !== undefined) {
       Object.assign(node, position);
-      // Also assign to fx and fy to "fix" the position
+      // THIS IS THE KEY CHANGE: Pin the node by setting its fixed position.
       node.fx = position.x;
       node.fy = position.y;
     }
@@ -353,15 +353,7 @@ Object.defineProperty(StateViz.prototype, 'positionTable', {
   get() { return getPositionTable(this.__stateMap); },
   set(posTable) {
     setPositionTable(posTable, this.__stateMap);
-    // We don't need to restart the force layout anymore.
-    // Instead, we manually update the node positions.
-    this.force.nodes().forEach(d => {
-        if (d.fx !== null && d.fy !== null) {
-            d.x = d.fx;
-            d.y = d.fy;
-        }
-    });
-    // Manually trigger a single 'tick' to draw the updates
-    this.force.tick();
+    // Now that the nodes are pinned, we can safely restart the simulation.
+    this.force.alpha(1).restart();
   }
 });
