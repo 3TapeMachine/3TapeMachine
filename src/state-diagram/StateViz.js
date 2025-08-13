@@ -112,19 +112,6 @@ const forEachObj = (obj, fn) => {
 
 // --- Main StateViz Function ---
 
-/**
- * Create a state diagram inside an SVG.
- * Each vertex/edge (node/link) object is also annotated with @.domNode@
- * corresponding to its SVG element.
- *
- * Note: currently, element IDs (e.g. for textPath) will collide if multiple
- * diagrams are on the same document (HTML page).
- * @param  {d3.Selection}      container     Container to add the SVG to.
- * @param  {[LayoutNode] | StateMap} nodes  Parameter to D3's force.nodes.
- *   Important: passing a StateMap is recommended when using setPositionTable.
- *   Passing an array will key the state nodes by array index.
- * @param  {[LayoutEdge]}     linkArray     Parameter to D3's force.links.
- */
 export default function StateViz(container, nodes, linkArray) {
   const w = 800;
   const h = 500;
@@ -149,23 +136,19 @@ export default function StateViz(container, nodes, linkArray) {
     force.alphaTarget(0);
     svg.transition().style('box-shadow', null);
   }
-  function releasenode(d) {
-    d.fx = null;
-    d.fy = null;
-    force.alpha(1).restart();
-  }
   
   const nodeArray = Array.isArray(nodes) ? nodes : Object.values(nodes);
   this.__stateMap = nodes;
 
   const force = d3.forceSimulation(nodeArray)
-  // .force('link', d3.forceLink(linkArray).distance(linkDistance)) // <-- Disabled movement of states 
-  // .force('charge', d3.forceManyBody().strength(-500))          // <-- Disabled repulsion between states
-  .force('center', d3.forceCenter(w / 2, h / 2))
-  .alpha(1)
-  .alphaDecay(0.0228);
+    // The link and charge forces are disabled to respect the YAML positions
+    // .force('link', d3.forceLink(linkArray).distance(linkDistance))
+    // .force('charge', d3.forceManyBody().strength(-500))
+    .force('center', d3.forceCenter(w / 2, h / 2))
+    .alpha(1)
+    .alphaDecay(0.0228);
 
-  // --- DRAG BEHAVIOR FOR CIRCLES ---
+  // --- DRAG BEHAVIOR ---
   const drag = d3.drag()
     .on('start', function (event, d) {
       if (!event.active) force.alphaTarget(0.3).restart();
@@ -174,31 +157,25 @@ export default function StateViz(container, nodes, linkArray) {
       dragstart(d);
     })
     .on('drag', function (event, d) {
-  // Update the node's fixed position to the cursor's position.
+      // Update the data model's fixed position
       d.fx = event.x;
       d.fy = event.y;
-
-  // Manually trigger a single simulation tick.
-  // This forces the .on('tick', ...) handler to fire immediately,
-  // redrawing the circle, its label, and all connected edges in real-time.
-      force.tick(); 
-})
+      // Instantly update the visual position of the entire group for smooth dragging
+      d3.select(this).attr('transform', `translate(${d.fx}, ${d.fy})`);
+      // We also need to manually tick the force to update the arrows in real-time
+      force.tick();
+    })
     .on('end', function (event, d) {
       if (!event.active) force.alphaTarget(0);
-      d.fx = event.x;
-      d.fy = event.y;
       dragend(d);
     });
 
   // Edges
   const edgeCounter = new EdgeCounter(linkArray);
-
   const edgeselection = svg.selectAll('.edgepath')
     .data(linkArray)
     .enter();
-
   const edgegroups = edgeselection.append('g');
-
   const labelAbove = (d, i) => `${-1.1 * (i + 1)}em`;
   const labelBelow = (d, i) => `${0.6 + 1.1 * (i + 1)}em`;
 
@@ -257,22 +234,24 @@ export default function StateViz(container, nodes, linkArray) {
   });
   const edgepaths = edgegroups.selectAll('.edgepath');
 
-  // Nodes
-  const nodeSelection = svg.selectAll('.node')
+  // --- NODES (STRUCTURAL CHANGE) ---
+  // Create a <g> group for each node. This is the key change.
+  const nodeGroups = svg.selectAll('.node-group')
     .data(nodeArray)
-    .enter();
+    .enter()
+    .append('g')
+    .attr('class', 'node-group')
+    .call(drag); // Attach drag handler to the group
 
-  const nodecircles = nodeSelection
-    .append('circle')
+  // Append the circle to the group
+  nodeGroups.append('circle')
     .attr('class', 'node')
     .attr('r', nodeRadius)
     .style('fill', (d, i) => colors(i))
-    .each(function (d) { d.domNode = this; })
-    .on('dblclick', releasenode)
-    .call(drag); // <-- Drag behavior attached to circles only
+    .each(function (d) { d.domNode = this; }); // Keep reference if needed elsewhere
 
-  const nodelabels = nodeSelection
-    .append('text')
+  // Append the text label to the group
+  nodeGroups.append('text')
     .attr('class', 'nodelabel')
     .attr('dy', '0.25em')
     .text(d => d.label);
@@ -316,23 +295,15 @@ export default function StateViz(container, nodes, linkArray) {
     }
   });
 
-  // Force Layout Update
+  // --- FORCE LAYOUT UPDATE ---
   force.on('tick', function () {
-    nodecircles
-      .attr('cx', d => d.x = limitRange(nodeRadius, w - nodeRadius, d.x))
-      .attr('cy', d => d.y = limitRange(nodeRadius, h - nodeRadius, d.y));
+    // Move the entire group. This moves the circle and label together.
+    nodeGroups
+      .attr('transform', d => `translate(${d.x}, ${d.y})`);
 
-    nodelabels
-      .attr('x', d => d.x)
-      .attr('y', d => d.y);
-
+    // The edge paths still need to be updated based on the node's x/y data
     edgepaths.attr('d', d => d.getPath());
-
     edgegroups.each(function (d) { d.refreshLabels(); });
-
-    if (nodeArray.every(d => d.fx !== undefined && d.fy !== undefined)) {
-      force.stop();
-    }
   });
   this.force = force;
 }
@@ -340,7 +311,7 @@ export default function StateViz(container, nodes, linkArray) {
 // --- Positioning API ---
 
 function getPositionTable(stateMap) {
-  return mapValues(stateMap, node => pick(node, ['x', 'y', 'px', 'py', 'fixed']));
+  return mapValues(stateMap, node => pick(node, ['x', 'y', 'fx', 'fy']));
 }
 
 function setPositionTable(posTable, stateMap) {
@@ -348,7 +319,7 @@ function setPositionTable(posTable, stateMap) {
     const position = posTable[state];
     if (position !== undefined) {
       Object.assign(node, position);
-      // THIS IS THE KEY CHANGE: Pin the node by setting its fixed position.
+      // Pin the node by setting its fixed position.
       node.fx = position.x;
       node.fy = position.y;
     }
