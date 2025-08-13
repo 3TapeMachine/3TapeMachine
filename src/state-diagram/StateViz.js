@@ -174,9 +174,14 @@ export default function StateViz(container, nodes, linkArray) {
       dragstart(d);
     })
     .on('drag', function (event, d) {
+  // Update the data model for the physics engine
       d.fx = event.x;
       d.fy = event.y;
-    })
+
+  // updated the visual element directly for real-time feedback.
+  // 'this' refers to the circle element being dragged.
+      d3.select(this).attr('cx', d.fx).attr('cy', d.fy);
+})
     .on('end', function (event, d) {
       if (!event.active) force.alphaTarget(0);
       d.fx = event.x;
