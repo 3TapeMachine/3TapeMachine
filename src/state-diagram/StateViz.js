@@ -162,7 +162,7 @@ export default function StateViz(container, nodes, linkArray) {
   // .force('link', d3.forceLink(linkArray).distance(linkDistance)) // <-- Disabled movement of states 
   // .force('charge', d3.forceManyBody().strength(-500))          // <-- Disabled repulsion between states
   .force('center', d3.forceCenter(w / 2, h / 2))
-  .alpha(1)
+  //.alpha(1)
   .alphaDecay(0.0228);
 
   // --- DRAG BEHAVIOR FOR CIRCLES ---
