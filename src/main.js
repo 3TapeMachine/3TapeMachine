@@ -176,8 +176,21 @@ function updateBinaryButtonVisibility() {
   }
 }
 
+// NEW FUNCTION to handle layout changes
+function updateLayoutForDocument(doc) {
+  const body = document.body;
+  // Use the 'type' property from the parsed YAML to identify the Universal TM
+  if (doc && doc.source && doc.source.includes("type: 3tape")) {
+    body.classList.add('universal-layout');
+  } else {
+    body.classList.remove('universal-layout');
+  }
+}
+
 (() => {
   menu.onChange = (doc, opts) => {
+    updateLayoutForDocument(doc); // Call the new layout function
+
     switch (opts && opts.type) {
       case 'duplicate':
         controller.setBackingDocument(doc);
@@ -376,8 +389,6 @@ window.addEventListener('blur', () => {
 })();
 
 // --- Binary Conversion Logic ---
-// --- Binary Conversion Logic ---
-
 const dirDict = {
   'R': '1',
   'L': '11',
@@ -397,10 +408,8 @@ function generateDictionaries(table) {
     if (typeof state === 'string' && !stateDict[state]) states.add(state);
     if (transitions && typeof transitions === 'object') {
       for (const [readSymbol, instr] of Object.entries(transitions)) {
-        console.log('Processing transition:', state, readSymbol, instr);
         if (typeof readSymbol === 'string') symbols.add(readSymbol);
         if (typeof instr === 'object') {
-          console.log('Write is ', instr.write, ' and type is ', typeof instr.write);
           if ('write' in instr) symbols.add(instr.write.toString());
           if ('L' in instr && typeof instr.L === 'string' && !stateDict[instr.L]) states.add(instr.L);
           if ('R' in instr && typeof instr.R === 'string' && !stateDict[instr.R]) states.add(instr.R);
@@ -419,7 +428,6 @@ function generateDictionaries(table) {
 
   let symCode = 2;
   for (const sym of symbols) {
-    console.log(sym, symCode);
     if (typeof sym !== 'string') continue;
     if (sym.trim() === '') {
       symbolDict[sym] = '1';
@@ -511,7 +519,7 @@ function convertCurrentTMToBinary() {
 
 // --- Attach binary conversion to button after DOM is ready ---
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('my-new-btn'); // <-- CORRECTED ID
+  const btn = document.getElementById('my-new-btn');
   if (btn) {
     btn.addEventListener('click', convertCurrentTMToBinary);
   }
@@ -520,12 +528,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // For interaction/debugging
 export { controller };
 
-// --- ADD THIS BLOCK TO RUN THE VISIBILITY CHECK ON PAGE LOAD ---
+// Ensure layout is correct on initial page load
 document.addEventListener('DOMContentLoaded', () => {
-  // A small delay ensures the menu and controller are fully initialized
-  setTimeout(() => {
-    if (menu.currentDocument) {
-      updateBinaryButtonVisibility();
-    }
-  }, 100);
+    setTimeout(() => {
+        if (menu.currentDocument) {
+            updateLayoutForDocument(menu.currentDocument);
+        }
+    }, 100); // A small delay ensures the document is fully loaded
 });
