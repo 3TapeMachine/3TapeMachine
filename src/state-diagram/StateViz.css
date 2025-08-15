@@ -52,3 +52,33 @@ text {
   stroke: lightskyblue;
   fill: lightskyblue;
 }
+
+/* --- NEW LAYOUT RULES FOR UNIVERSAL TM --- */
+
+/* Assuming your HTML has a structure like:
+  <div class="row">
+    <div id="editor-column" class="col-md-6">...</div>
+    <div id="diagram-column" class="col-md-6">...</div>
+  </div>
+  These rules will override the default column widths.
+*/
+
+/* Default layout for all examples */
+#editor-column {
+  flex-basis: 45%;
+  transition: flex-basis 0.4s ease-in-out;
+}
+
+#diagram-column {
+  flex-basis: 55%;
+  transition: flex-basis 0.4s ease-in-out;
+}
+
+/* Special, expanded layout when the .universal-layout class is on the body */
+.universal-layout #editor-column {
+  flex-basis: 30%; /* Squeeze the editor */
+}
+
+.universal-layout #diagram-column {
+  flex-basis: 70%; /* Expand the diagram */
+}
