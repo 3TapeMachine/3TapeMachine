@@ -55,30 +55,27 @@ text {
 
 /* --- NEW LAYOUT RULES FOR UNIVERSAL TM --- */
 
-/* Assuming your HTML has a structure like:
-  <div class="row">
-    <div id="editor-column" class="col-md-6">...</div>
-    <div id="diagram-column" class="col-md-6">...</div>
-  </div>
-  These rules will override the default column widths.
+/* The parent .row is a flex container. These rules adjust the flex-basis
+  of the diagram column and its adjacent sibling (the editor column).
 */
 
 /* Default layout for all examples */
-#editor-column {
-  flex-basis: 45%;
-  transition: flex-basis 0.4s ease-in-out;
-}
-
 #diagram-column {
   flex-basis: 55%;
   transition: flex-basis 0.4s ease-in-out;
 }
 
-/* Special, expanded layout when the .universal-layout class is on the body */
-.universal-layout #editor-column {
-  flex-basis: 30%; /* Squeeze the editor */
+/* Target the editor's column, which is the next sibling of the diagram column */
+#diagram-column + div {
+  flex-basis: 45%;
+  transition: flex-basis 0.4s ease-in-out;
 }
 
+/* Special, expanded layout when the .universal-layout class is on the body */
 .universal-layout #diagram-column {
   flex-basis: 70%; /* Expand the diagram */
+}
+
+.universal-layout #diagram-column + div {
+  flex-basis: 30%; /* Squeeze the editor */
 }
