@@ -151,19 +151,18 @@ const menu = (() => {
 // "Edit" Menu //
 /////////////////
 
-// --- THIS FUNCTION HAS BEEN UPDATED ---
 function updateBinaryButtonVisibility() {
   const newBtn = document.getElementById('my-new-btn');
   if (!newBtn) return;
 
   const currentDoc = menu.currentDocument;
-  if (!currentDoc || !currentDoc.isExample) {
+  // --- THIS IS THE FIX ---
+  // The button should appear for ANY document, not just examples.
+  if (!currentDoc) {
     newBtn.style.display = 'none';
     return;
   }
 
-  // Use the source directly from the document object, NOT the editor's value.
-  // This avoids the race condition on page load.
   const src = currentDoc.source;
   if (!src) {
       newBtn.style.display = 'none';
