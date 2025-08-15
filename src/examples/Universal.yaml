@@ -261,8 +261,8 @@ positions:
 
   # State & Symbol Writing (lower right arc)
   ChangeStateRewind:   {x: 73.01, y: 166.34}
-  WriteNextState:      {x: 73.5, y: 166.7}
-  WriteSymbolRewind:   {x: 920, y: 600}
+  WriteNextState:      {x: 211.89, y: 99.21}
+  WriteSymbolRewind:   {x: 213.55, y: 101.21}
 
   # Tape Head Movement (bottom right, vertical)
   MoveHead:        {x: 800, y: 600}
