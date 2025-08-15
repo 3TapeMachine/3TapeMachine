@@ -151,16 +151,25 @@ const menu = (() => {
 // "Edit" Menu //
 /////////////////
 
+// --- THIS FUNCTION HAS BEEN UPDATED ---
 function updateBinaryButtonVisibility() {
-  const newBtn = document.getElementById('my-new-btn'); // <-- CORRECTED ID
+  const newBtn = document.getElementById('my-new-btn');
   if (!newBtn) return;
-  
-  if (!menu.currentDocument.isExample) {
+
+  const currentDoc = menu.currentDocument;
+  if (!currentDoc || !currentDoc.isExample) {
     newBtn.style.display = 'none';
     return;
   }
 
-  const src = controller.editor.getValue();
+  // Use the source directly from the document object, NOT the editor's value.
+  // This avoids the race condition on page load.
+  const src = currentDoc.source;
+  if (!src) {
+      newBtn.style.display = 'none';
+      return;
+  }
+
   let doc;
   try {
     doc = yaml.load(src);
@@ -168,13 +177,16 @@ function updateBinaryButtonVisibility() {
     newBtn.style.display = 'none';
     return;
   }
+
   const docType = (doc && doc.type || '').toString().trim().toLowerCase();
+  // The button should be visible for 1-tape machines, hidden for 3-tape
   if (docType === '3tape') {
     newBtn.style.display = 'none';
   } else {
     newBtn.style.display = 'inline-block';
   }
 }
+
 
 // NEW FUNCTION to handle layout changes
 function updateLayoutForDocument(doc) {
@@ -189,7 +201,8 @@ function updateLayoutForDocument(doc) {
 
 (() => {
   menu.onChange = (doc, opts) => {
-    updateLayoutForDocument(doc); // Call the new layout function
+    updateLayoutForDocument(doc); // Call the layout function
+    updateBinaryButtonVisibility(); // Also call the button visibility function here
 
     switch (opts && opts.type) {
       case 'duplicate':
@@ -202,7 +215,6 @@ function updateLayoutForDocument(doc) {
         controller.openDocument(doc);
     }
     refreshEditMenu();
-    updateBinaryButtonVisibility();
   };
 
   const refreshEditMenu = (() => {
@@ -528,11 +540,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // For interaction/debugging
 export { controller };
 
-// Ensure layout is correct on initial page load
+// Ensure layout and button visibility are correct on initial page load
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (menu.currentDocument) {
             updateLayoutForDocument(menu.currentDocument);
+            updateBinaryButtonVisibility(); // Call this here to fix the issue
         }
     }, 100); // A small delay ensures the document is fully loaded
 });
