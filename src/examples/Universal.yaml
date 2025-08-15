@@ -230,7 +230,7 @@ positions:
   # Center hub
   MatchState: {x: 168.03, y: 465.13}
   MatchSymbol: {x: 60.40, y: 456.37}
-  WriteSymbol: {x: 800, y: 400}
+  WriteSymbol: {x: 463.42, y: 120.66}
   finish: {x: 600, y: 520}
   accept: {x: 540, y: 600}
   reject: {x: 660, y: 600}
@@ -261,8 +261,8 @@ positions:
 
   # State & Symbol Writing (lower right arc)
   ChangeStateRewind:   {x: 73.01, y: 166.34}
-  WriteNextState:      {x: 211.89, y: 99.21}
-  WriteSymbolRewind:   {x: 213.55, y: 101.21}
+  WriteNextState:      {x: 199.08, y: 98.36}
+  WriteSymbolRewind:   {x: 345.96, y: 93.52}
 
   # Tape Head Movement (bottom right, vertical)
   MoveHead:        {x: 800, y: 600}

@@ -113,8 +113,8 @@ const forEachObj = (obj, fn) => {
 // --- Main StateViz Function ---
 
 export default function StateViz(container, nodes, linkArray) {
-  const w = 800;
-  const h = 500;
+  const w = 1200; // Increased width
+  const h = 800;  // Increased height
   const linkDistance = 140;
   const nodeRadius = 20;
 
@@ -141,9 +141,6 @@ export default function StateViz(container, nodes, linkArray) {
   this.__stateMap = nodes;
 
   const force = d3.forceSimulation(nodeArray)
-    // The link and charge forces are disabled to respect the YAML positions
-    // .force('link', d3.forceLink(linkArray).distance(linkDistance))
-    // .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(w / 2, h / 2))
     .alpha(1)
     .alphaDecay(0.0228);
@@ -157,12 +154,9 @@ export default function StateViz(container, nodes, linkArray) {
       dragstart(d);
     })
     .on('drag', function (event, d) {
-      // Update the data model's fixed position
       d.fx = event.x;
       d.fy = event.y;
-      // Instantly update the visual position of the entire group for smooth dragging
       d3.select(this).attr('transform', `translate(${d.fx}, ${d.fy})`);
-      // We also need to manually tick the force to update the arrows in real-time
       force.tick();
     })
     .on('end', function (event, d) {
@@ -235,22 +229,19 @@ export default function StateViz(container, nodes, linkArray) {
   const edgepaths = edgegroups.selectAll('.edgepath');
 
   // --- NODES (STRUCTURAL CHANGE) ---
-  // Create a <g> group for each node. This is the key change.
   const nodeGroups = svg.selectAll('.node-group')
     .data(nodeArray)
     .enter()
     .append('g')
     .attr('class', 'node-group')
-    .call(drag); // Attach drag handler to the group
+    .call(drag);
 
-  // Append the circle to the group
   nodeGroups.append('circle')
     .attr('class', 'node')
     .attr('r', nodeRadius)
     .style('fill', (d, i) => colors(i))
-    .each(function (d) { d.domNode = this; }); // Keep reference if needed elsewhere
+    .each(function (d) { d.domNode = this; });
 
-  // Append the text label to the group
   nodeGroups.append('text')
     .attr('class', 'nodelabel')
     .attr('dy', '0.25em')
@@ -297,11 +288,9 @@ export default function StateViz(container, nodes, linkArray) {
 
   // --- FORCE LAYOUT UPDATE ---
   force.on('tick', function () {
-    // Move the entire group. This moves the circle and label together.
     nodeGroups
       .attr('transform', d => `translate(${d.x}, ${d.y})`);
 
-    // The edge paths still need to be updated based on the node's x/y data
     edgepaths.attr('d', d => d.getPath());
     edgegroups.each(function (d) { d.refreshLabels(); });
   });
@@ -319,7 +308,6 @@ function setPositionTable(posTable, stateMap) {
     const position = posTable[state];
     if (position !== undefined) {
       Object.assign(node, position);
-      // Pin the node by setting its fixed position.
       node.fx = position.x;
       node.fy = position.y;
     }
@@ -330,7 +318,6 @@ Object.defineProperty(StateViz.prototype, 'positionTable', {
   get() { return getPositionTable(this.__stateMap); },
   set(posTable) {
     setPositionTable(posTable, this.__stateMap);
-    // Now that the nodes are pinned, we can safely restart the simulation.
     this.force.alpha(1).restart();
   }
 });
