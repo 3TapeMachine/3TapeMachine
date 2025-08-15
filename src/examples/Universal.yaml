@@ -270,9 +270,9 @@ positions:
   MoveHead2:       {x: 201.95, y: 337.64}
   LeftOneSymbol:   {x: 534.65, y: 290.44}
   LeftTwoSymbol:   {x: 313.58, y: 244.78}
-  LeftAddBlank:    {x: 687.01, y: 363.46}
-  CheckBlankRight: {x: 990.15, y: 366.67}
-  AddBlankRight:   {x: 1000, y: 860}
+  LeftAddBlank:    {x: 724.24, y: 369.28}
+  CheckBlankRight: {x: 916.85, y: 289.88}
+  AddBlankRight:   {x: 918.66, y: 300.15}
 
   # Tape Shifting (Complex) Group (bottom left, grid)
   RightShift0:        {x: 673.43, y: 178.81}
