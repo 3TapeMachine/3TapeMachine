@@ -231,9 +231,9 @@ positions:
   MatchState: {x: 365.83, y: 762.99}
   MatchSymbol: {x: 208.17, y: 757.73}
   WriteSymbol: {x: 466.91, y: 169.53}
-  finish: {x: 600, y: 520}
-  accept: {x: 540, y: 600}
-  reject: {x: 660, y: 600}
+  finish: {x: 382.42, y: 461.56}
+  accept: {x: 775.03, y: 454.56}
+  reject: {x: 594.84, y: 559.28}
 
   # Initialization arc (upper left)
   WriteStartState: {x: 137.96, y: 74.94}
@@ -272,12 +272,12 @@ positions:
   LeftTwoSymbol:   {x: 313.58, y: 244.78}
   LeftAddBlank:    {x: 724.24, y: 369.28}
   CheckBlankRight: {x: 916.85, y: 289.88}
-  AddBlankRight:   {x: 918.66, y: 300.15}
+  AddBlankRight:   {x: 1045.48, y: 317.60}
 
   # Tape Shifting (Complex) Group (bottom left, grid)
   RightShift0:        {x: 673.43, y: 178.81}
   RightShift1:        {x: 848.84, y: 216.47}
-  RightShiftRewind:   {x: 1028.75, y: 312.76}
+  RiftShiftRewind:   {x: 1009.30, y: 227.42}
   LeftShiftFastForward: {x: 992.39, y: 413.55}
   LeftShiftSpace:     {x: 895.54, y: 529.18}
   LeftShift0:         {x: 762.61, y: 636.95}
