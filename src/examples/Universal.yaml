@@ -228,57 +228,57 @@ source code: |
 positions:
 # Centralized, Radial Layout
   # Center hub
-  MatchState: {x: 168.03, y: 465.13}
-  MatchSymbol: {x: 60.40, y: 456.37}
-  WriteSymbol: {x: 463.42, y: 120.66}
+  MatchState: {x: 365.83, y: 762.99}
+  MatchSymbol: {x: 208.17, y: 757.73}
+  WriteSymbol: {x: 466.91, y: 169.53}
   finish: {x: 600, y: 520}
   accept: {x: 540, y: 600}
   reject: {x: 660, y: 600}
 
   # Initialization arc (upper left)
-  WriteStartState: {x: 75.13, y: 79.59}
-  WSS1:           {x: 188.11, y: 43.06}
-  WSS2:           {x: 307.50, y: 23.42}
-  WSS3:           {x: 461.43, y: 29.40}
-  SkipToInput:    {x: 573.89, y: 78.94}
-  SkipToInput1:   {x: 692.87, y: 123.21}
-  SkipToInput2:   {x: 748.73, y: 185.72}
+  WriteStartState: {x: 137.96, y: 74.94}
+  WSS1:           {x: 328.90, y: 43.06}
+  WSS2:           {x: 489.01, y: 38.55}
+  WSS3:           {x: 642.94, y: 44.53}
+  SkipToInput:    {x: 797.29, y: 76.61}
+  SkipToInput1:   {x: 961.65, y: 90.63}
+  SkipToInput2:   {x: 1126.88, y: 115.91}
 
   # Input Copying arc (upper right)
-  CopyInputStart: {x: 659.74, y: 354.04}
-  CopyInput1:     {x: 707.71, y: 450.92}
-  CopyInput0:     {x: 612.70, y: 452.66}
-  RewindInput:    {x: 508.45, y: 464.62}
-  BlankInput:     {x: 759.69, y: 274.03}
-  BlankInput1:    {x: 756.27, y: 372.97}
+  CopyInputStart: {x: 1094.90, y: 466.90}
+  CopyInput1:     {x: 1074.22, y: 617.30}
+  CopyInput0:     {x: 1118.84, y: 766.81}
+  RewindInput:    {x: 865.65, y: 761.32}
+  BlankInput:     {x: 1150.64, y: 210.04}
+  BlankInput1:    {x: 1150.71, y: 365.99}
 
   # Main Loop & Matching (left and right spokes)
-  RewindTransitions: {x: 407.84, y: 462.92}
-  RewindState: {x: 288.64, y: 466.33}
-  RewindSymbolForNextTransition: {x: 113.43, y: 406.38}
-  SkipTransition: {x: 60.52, y: 331.21}
-  SkipTransition1: {x: 57.53, y: 242.36}
+  RewindTransitions: {x: 723.16, y: 766.60}
+  RewindState: {x: 519.02, y: 764.19}
+  RewindSymbolForNextTransition: {x: 272.83, y: 587.89}
+  SkipTransition: {x: 122.19, y: 670.96}
+  SkipTransition1: {x: 63.35, y: 522.77}
 
   # State & Symbol Writing (lower right arc)
-  ChangeStateRewind:   {x: 73.01, y: 166.34}
-  WriteNextState:      {x: 199.08, y: 98.36}
-  WriteSymbolRewind:   {x: 345.96, y: 93.52}
+  ChangeStateRewind:   {x: 83.48, y: 404.87}
+  WriteNextState:      {x: 73.42, y: 268.23}
+  WriteSymbolRewind:   {x: 255.20, y: 169.15}
 
   # Tape Head Movement (bottom right, vertical)
-  MoveHead:        {x: 800, y: 600}
-  MoveHead1:       {x: 800, y: 680}
-  MoveHead2:       {x: 800, y: 760}
-  LeftOneSymbol:   {x: 900, y: 700}
-  LeftTwoSymbol:   {x: 900, y: 780}
-  LeftAddBlank:    {x: 1000, y: 780}
-  CheckBlankRight: {x: 900, y: 860}
+  MoveHead:        {x: 436.98, y: 581.38}
+  MoveHead1:       {x: 253.14, y: 448.46}
+  MoveHead2:       {x: 201.95, y: 337.64}
+  LeftOneSymbol:   {x: 534.65, y: 290.44}
+  LeftTwoSymbol:   {x: 313.58, y: 244.78}
+  LeftAddBlank:    {x: 687.01, y: 363.46}
+  CheckBlankRight: {x: 990.15, y: 366.67}
   AddBlankRight:   {x: 1000, y: 860}
 
   # Tape Shifting (Complex) Group (bottom left, grid)
-  RightShift0:        {x: 400, y: 600}
-  RightShift1:        {x: 480, y: 640}
-  RiftShiftRewind:    {x: 440, y: 720}
-  LeftShiftFastForward: {x: 520, y: 680}
-  LeftShiftSpace:     {x: 600, y: 720}
-  LeftShift0:         {x: 680, y: 680}
-  LeftShift1:         {x: 760, y: 640}
+  RightShift0:        {x: 673.43, y: 178.81}
+  RightShift1:        {x: 848.84, y: 216.47}
+  RightShiftRewind:   {x: 1028.75, y: 312.76}
+  LeftShiftFastForward: {x: 992.39, y: 413.55}
+  LeftShiftSpace:     {x: 895.54, y: 529.18}
+  LeftShift0:         {x: 762.61, y: 636.95}
+  LeftShift1:         {x: 551.73, y: 664.43}
