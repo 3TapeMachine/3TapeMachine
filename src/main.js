@@ -151,45 +151,45 @@ const menu = (() => {
 // "Edit" Menu //
 /////////////////
 
-// This function now handles both layout and button visibility.
-function updateUIForDocument(doc) {
-  if (!doc) return;
-
-  const body = document.body;
-  const newBtn = document.getElementById('my-new-btn');
-
-  // Set default states
-  body.classList.remove('universal-layout');
-  if (newBtn) newBtn.style.display = 'none';
-
-  const src = doc.source;
-  if (!src) return;
-
-  let parsedDoc;
-  try {
-    parsedDoc = yaml.load(src);
-  } catch (e) {
-    // Silently fail if YAML is invalid during this check
+function updateBinaryButtonVisibility() {
+  const newBtn = document.getElementById('my-new-btn'); // <-- CORRECTED ID
+  if (!newBtn) return;
+  
+  if (!menu.currentDocument.isExample) {
+    newBtn.style.display = 'none';
     return;
   }
 
-  const docType = (parsedDoc && parsedDoc.type || '').toString().trim().toLowerCase();
-
-  // Apply Universal TM layout if it's a 3-tape machine
-  if (docType === '3tape') {
-    body.classList.add('universal-layout');
+  const src = controller.editor.getValue();
+  let doc;
+  try {
+    doc = yaml.load(src);
+  } catch {
+    newBtn.style.display = 'none';
+    return;
   }
-
-  // Show the binary conversion button ONLY for 1-tape machines
-  if (newBtn && docType !== '3tape') {
+  const docType = (doc && doc.type || '').toString().trim().toLowerCase();
+  if (docType === '3tape') {
+    newBtn.style.display = 'none';
+  } else {
     newBtn.style.display = 'inline-block';
   }
 }
 
+// NEW FUNCTION to handle layout changes
+function updateLayoutForDocument(doc) {
+  const body = document.body;
+  // Use the 'type' property from the parsed YAML to identify the Universal TM
+  if (doc && doc.source && doc.source.includes("type: 3tape")) {
+    body.classList.add('universal-layout');
+  } else {
+    body.classList.remove('universal-layout');
+  }
+}
 
 (() => {
   menu.onChange = (doc, opts) => {
-    updateUIForDocument(doc); // Call the unified UI update function
+    updateLayoutForDocument(doc); // Call the new layout function
 
     switch (opts && opts.type) {
       case 'duplicate':
@@ -202,6 +202,7 @@ function updateUIForDocument(doc) {
         controller.openDocument(doc);
     }
     refreshEditMenu();
+    updateBinaryButtonVisibility();
   };
 
   const refreshEditMenu = (() => {
@@ -527,11 +528,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // For interaction/debugging
 export { controller };
 
-// Ensure layout and button visibility are correct on initial page load
+// Ensure layout is correct on initial page load
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (menu.currentDocument) {
-            updateUIForDocument(menu.currentDocument);
+            updateLayoutForDocument(menu.currentDocument);
         }
     }, 100); // A small delay ensures the document is fully loaded
 });
