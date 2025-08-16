@@ -533,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (menu.currentDocument) {
             updateLayoutForDocument(menu.currentDocument);
+            updateBinaryButtonVisibility(); // <--fix
         }
     }, 100); // A small delay ensures the document is fully loaded
 });
